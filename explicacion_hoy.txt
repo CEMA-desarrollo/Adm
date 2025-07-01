@@ -1,0 +1,59 @@
+======================================================================
+  RESUMEN DE LA JORNADA DE TRABAJO - 28 DE JUNIO DE 2025
+======================================================================
+
+OBJETIVO:
+Solucionar errores en los módulos de Servicios y Proveedores, y sentar las bases para el módulo de Tratamientos.
+
+----------------------------------------------------------------------
+  PROBLEMA 1: Errores "401 Unauthorized" y Pérdida de Sesión
+----------------------------------------------------------------------
+
+*   SÍNTOMA:
+    Después de iniciar sesión, al intentar acceder a cualquier módulo o incluso al cerrar sesión, la aplicación devolvía errores `401 Unauthorized`.
+
+*   CAUSA RAÍZ:
+    El servidor backend usaba `express-session` con el almacenamiento por defecto (en memoria). Cada vez que `nodemon` reiniciaba el servidor por un cambio en el código, la memoria se borraba y todas las sesiones activas se perdían.
+
+*   SOLUCIÓN:
+    1.  Se instaló el paquete `session-file-store` en el backend.
+    2.  Se reconfiguró `server.js` para usar este paquete, forzando a que las sesiones se guarden en archivos dentro de una nueva carpeta `./sessions`. Esto hace que las sesiones sean persistentes y sobrevivan a los reinicios del servidor.
+
+----------------------------------------------------------------------
+  PROBLEMA 2: Fallos en el Módulo de Servicios
+----------------------------------------------------------------------
+
+*   SÍNTOMAS:
+    1.  La eliminación de un servicio no era clara (solo lo desactivaba).
+    2.  No se podía editar un servicio inactivo.
+    3.  No existía una forma de eliminar un servicio permanentemente.
+
+*   SOLUCIÓN (Backend y Frontend):
+    1.  Se implementó un ciclo de vida completo para los registros:
+        - **Desactivación:** La acción en la lista de activos ahora desactiva el servicio (borrado lógico).
+        - **Reactivación y Edición:** Se habilitaron botones para editar y reactivar servicios desde la lista de inactivos.
+        - **Eliminación Permanente:** Se añadió una nueva ruta en el backend (`DELETE /api/servicios/:id/permanent`) y la lógica correspondiente en el modelo y controlador para borrar físicamente un registro de la base de datos, con una confirmación de seguridad en el frontend.
+
+----------------------------------------------------------------------
+  PROBLEMA 3: Fallos en el Módulo de Proveedores
+----------------------------------------------------------------------
+
+*   SÍNTOMAS:
+    Mismos problemas que en el módulo de Servicios, además de un error `400 Bad Request` al actualizar y un fallo `500 Internal Server Error` al asignar servicios.
+
+*   SOLUCIÓN:
+    1.  Se aplicó la misma refactorización que en Servicios para la gestión de activos/inactivos y la eliminación permanente.
+    2.  Se corrigió el `proveedorController.js` para que las actualizaciones fueran más flexibles, evitando el error 400.
+    3.  Se creó un nuevo modelo `proveedorServicioModel.js` con una lógica de transacciones robusta para asignar y desasignar servicios, solucionando el error 500.
+    4.  **Mejora de Usabilidad:** Se implementó un filtro inteligente en `Proveedores.vue` para que, al asignar servicios, solo se muestren los de la especialidad del proveedor y los servicios generales.
+
+----------------------------------------------------------------------
+  AVANCE ESTRATÉGICO: Módulo de Tratamientos
+----------------------------------------------------------------------
+
+*   DEFINICIÓN DEL FLUJO:
+    Se estableció un flujo de trabajo financiero claro: los Tratamientos generan deudas y los Pagos son ingresos que las cubren o generan saldo a favor.
+
+*   PREPARACIÓN DEL BACKEND:
+    1.  Se modificó la tabla `tratamientos` para usar un campo `estado` ('Programado', 'Realizado', 'Cancelado') en lugar de un simple booleano `facturado`.
+    2.  Se refactorizaron el modelo, controlador y rutas de tratamientos para soportar esta nueva lógica y devolver datos enriquecidos a la API (nombres de paciente/proveedor, total pagado, etc.), dejando todo listo para construir la interfaz de usuario.

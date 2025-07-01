@@ -1,0 +1,64 @@
+D:\Code\Adm
+├── backend/
+│   ├── src/
+│   │   ├── app.js             // Archivo principal de la aplicación Express (configuración de middleware, rutas)
+│   │   ├── config/            // Configuraciones de la aplicación (ej. conexión a base de datos, variables de entorno)
+│   │   │   └── db.js          // Configuración de la conexión a la base de datos (MongoDB, PostgreSQL, etc.)
+│   │   ├── controllers/       // Lógica de negocio para manejar las peticiones de las rutas
+│   │   │   ├── authController.js  // Lógica para login, registro, logout
+│   │   │   ├── userController.js  // Lógica para CRUD de usuarios
+│   │   │   ├── pacienteController.js // Lógica para CRUD de pacientes
+│   │   │   └── ... (otros controladores para proveedores, servicios, tratamientos, etc.)
+│   │   ├── models/            // Definiciones de esquemas de la base de datos (ej. con Mongoose para MongoDB)
+│   │   │   ├── User.js        // Esquema de usuario
+│   │   │   ├── Paciente.js    // Esquema de paciente
+│   │   │   └── ... (otros modelos para proveedores, servicios, tratamientos, etc.)
+│   │   ├── routes/            // Definición de las rutas de la API
+│   │   │   ├── authRoutes.js      // Rutas para autenticación (login, logout)
+│   │   │   ├── userRoutes.js      // Rutas para operaciones de usuario
+│   │   │   ├── pacienteRoutes.js  // Rutas para operaciones de paciente
+│   │   │   └── ... (otras rutas para proveedores, servicios, tratamientos, etc.)
+│   │   ├── middleware/        // Funciones middleware (ej. para autenticación, validación, manejo de errores)
+│   │   │   └── authMiddleware.js  // Middleware para verificar tokens JWT, roles
+│   │   └── server.js          // Punto de entrada para iniciar el servidor (donde se importa `app.js`)
+│   ├── .env                   // Archivo para variables de entorno (ej. URI de la DB, JWT_SECRET)
+│   └── package.json           // Dependencias del backend y scripts de inicio
+│
+├── frontend/
+│   ├── public/
+│   │   └── (Archivos estáticos como favicon.ico)
+│   ├── src/
+│   │   ├── assets/
+│   │   │   └── (Imágenes, logos, etc.)
+│   │   ├── components/
+│   │   │   └── (Componentes reutilizables de Vue)
+│   │   ├── layouts/
+│   │   │   ├── blank/
+│   │   │   │   └── Blank.vue
+│   │   │   └── default/
+│   │   │       └── Default.vue
+│   │   ├── plugins/
+│   │   │   └── (Configuración de plugins como Vuetify, Webfontloader)
+│   │   ├── router/
+│   │   │   └── index.js  (¡Este es tu archivo de rutas!)
+│   │   ├── services/
+│   │   │   └── authService.js
+│   │   ├── styles/
+│   │   │   └── settings.scss
+│   │   ├── views/
+│   │   │   ├── Especialidades.vue
+│   │   │   ├── Home.vue
+│   │   │   ├── Login.vue
+│   │   │   ├── Pacientes.vue
+│   │   │   ├── Proveedores.vue
+│   │   │   ├── Servicios.vue
+│   │   │   ├── Tratamientos.vue
+│   │   │   └── Usuarios.vue
+│   │   ├── App.vue
+│   │   └── main.js
+│   ├── .eslintrc.cjs
+│   ├── index.html
+│   ├── package.json
+│   └── vite.config.js
+│
+└── frontend_pendientes.txt

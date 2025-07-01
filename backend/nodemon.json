@@ -1,0 +1,12 @@
+{
+  "watch": ["."],
+  "ignore": [
+    "node_modules/",
+    "dist/",
+    "*.test.js",
+    "temp/",
+    ".vite-cache/",
+    "coverage/"
+  ],
+  "ext": "js,json"
+}

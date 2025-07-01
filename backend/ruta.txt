@@ -1,0 +1,43 @@
+D:\Code\Adm
+└── backend\
+    ├── config\
+    │   ├── db.config.js         // Configuración de la conexión a la base de datos MySQL.
+    │   └── index.js             // Carga las variables de entorno (ej. desde el archivo .env).
+    │
+    ├── controllers\
+    │   ├── auth.controller.js     // Lógica para login, registro de usuarios, etc.
+    │   ├── bitacora.controller.js // Lógica para obtener y filtrar los registros de la bitácora.
+    │   ├── pacientes.controller.js// Lógica para CRUD de pacientes y obtener su estado de cuenta.
+    │   ├── pagos.controller.js      // Lógica para registrar nuevos pagos.
+    │   ├── proveedores.controller.js// Lógica para CRUD de médicos y fisioterapeutas.
+    │   ├── servicios.controller.js  // Lógica para CRUD del catálogo de servicios.
+    │   ├── tasas.controller.js      // Lógica para gestionar las tasas de cambio.
+    │   └── tratamientos.controller.js// Lógica para crear tratamientos (el flujo clave que discutimos).
+    │
+    ├── middleware\
+    │   ├── auth.middleware.js     // Verifica el token de autenticación (JWT) en las rutas protegidas.
+    │   └── audit.middleware.js    // Registra la acción en la bitácora después de una operación exitosa.
+    │
+    ├── routes\
+    │   ├── auth.routes.js         // Define las rutas para la autenticación (ej. POST /api/login).
+    │   ├── bitacora.routes.js     // Define las rutas para acceder a la bitácora.
+    │   ├── pacientes.routes.js    // Define las rutas para los pacientes.
+    │   ├── pagos.routes.js        // Define las rutas para los pagos.
+    │   ├── proveedores.routes.js  // Define las rutas para los proveedores.
+    │   ├── servicios.routes.js    // Define las rutas para los servicios.
+    │   ├── tasas.routes.js        // Define las rutas para las tasas de cambio.
+    │   ├── tratamientos.routes.js // Define las rutas para los tratamientos.
+    │   └── index.js               // Archivo principal que agrupa y exporta todas las rutas.
+    │
+    ├── services\
+    │   ├── financial.service.js   // Lógica de negocio compleja (ej. calcular el saldo de un paciente).
+    │   └── audit.service.js       // Lógica para crear entradas en la bitácora.
+    │
+    ├── utils\
+    │   └── password.util.js       // Funciones de ayuda para hashear y comparar contraseñas (bcrypt).
+    │
+    ├── .env                     // Archivo para variables de entorno (contraseñas, secretos de JWT). ¡NO SUBIR A GIT!
+    ├── .gitignore               // Especifica qué archivos ignorar en el control de versiones (node_modules, .env).
+    ├── package.json             // Define las dependencias del proyecto y los scripts (npm start, etc.).
+    ├── package-lock.json        // Bloquea las versiones de las dependencias.
+    └── server.js                // El punto de entrada principal de la aplicación. Inicia el servidor Express.

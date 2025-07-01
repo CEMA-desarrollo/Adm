@@ -1,0 +1,88 @@
+Proyecto: Sistema Integral de Gestión Financiera y Auditoría para Consultorios (SIGFAC) - Frontend
+
+Visión del Frontend:
+Crear una interfaz de usuario intuitiva, reactiva y segura que permita a los usuarios (administradores y recepcionistas) interactuar eficientemente con el sistema de gestión financiera, reflejando las funcionalidades del backend.
+
+Tecnologías Frontend (Sugerencias, a definir):
+- Framework/Librería: Vue.js (Vite, Vue 3 compatible)
+- Manejo de estado: Context API/Redux (React), Vuex (Vue), NgRx (Angular)
+- Estilos: CSS Modules, Styled Components, Tailwind CSS, Bootstrap (o similar)
+- Enrutamiento: React Router, Vue Router, Angular Router
+
+Funcionalidades Clave del Frontend:
+
+1.  **Configuración Inicial del Proyecto:**
+    *   Inicializar el proyecto frontend con Vue.js (Vite). (COMPLETADO)
+    *   Limpiar el proyecto de archivos de plantillas incompatibles. (COMPLETADO)
+    *   Configurar el entorno de desarrollo (servidor de desarrollo, hot-reloading). (COMPLETADO)
+    *   Configurar el sistema de módulos y transpilación (Vite). (COMPLETADO)
+    *   Establecer una estructura de carpetas inicial (components, pages, services, utils, assets). (COMPLETADO)
+    *   Integrar Vuetify 3 y Vue Router 4. (COMPLETADO)
+    *   Integrar un linter (ESLint) y formateador (Prettier) para mantener la calidad del código. (APLAZADO - Imposible de resolver por ahora)
+    *   Integrar una plantilla de dashboard compatible con Vue 3. (COMPLETADO)
+
+2.  **Módulo de Autenticación y Seguridad:**
+    *   **Gestión de Sesión (MÁXIMA PRIORIDAD):**
+        *   Corregir la persistencia de la sesión entre el frontend y el backend para evitar la expulsión del sistema al navegar a rutas protegidas. (PENDIENTE)
+    *   **Página de Login:**
+        *   Diseño de formulario de `nombre_usuario` y `contraseña`. (COMPLETADO)
+        *   Manejo de envío de formulario a la API de login. (COMPLETADO - Conexión a servicio implementada)
+        *   Mostrar mensajes de error (credenciales inválidas, error de servidor). (COMPLETADO - Implementación básica)
+        *   Redirección a la página principal tras login exitoso. (COMPLETADO)
+        *   Almacenamiento seguro de la sesión del usuario (ej. en `localStorage` o `sessionStorage` si se usa JWT, o manejo de cookies si se usa `express-session`). (COMPLETADO - Uso de localStorage)
+    *   **Protección de Rutas:**
+        *   Implementar guardias de ruta para proteger las páginas que requieren autenticación. (COMPLETADO)
+        *   Redireccionar a la página de login si el usuario no está autenticado. (COMPLETADO)
+    *   **Depuración de Autenticación:**
+        *   Asegurar que el hash de la contraseña de prueba en la base de datos coincida con las credenciales de prueba. (COMPLETADO)
+    *   **Manejo de CORS y CSP:**
+        *   Configurar CORS en el backend para permitir peticiones desde el frontend. (COMPLETADO)
+        *   Configurar Content Security Policy (CSP) en el backend para permitir la carga de recursos. (COMPLETADO)
+    *   **Control de Acceso Basado en Roles (RBAC):**
+        *   Lógica para mostrar/ocultar elementos de la UI (menús, botones, secciones) según el `rol` del usuario (`admin`, `recepcionista`). (COMPLETADO - Implementado en rutas y menú de navegación)
+    *   **Funcionalidad de Logout:**
+        *   Botón de logout que invalide la sesión en el backend y limpie la sesión en el frontend. (COMPLETADO)
+
+3.  **Gestión de Entidades (CRUDs Básicos):**
+    *   **Páginas de Listado (ej. Pacientes, Proveedores, Servicios):**
+        *   Tabla para mostrar los datos con paginación y ordenamiento.
+        *   Funcionalidad de búsqueda/filtrado.
+    *   **Módulo de Gestión de Usuarios (Admin):**
+        *   Página para listar, crear, editar y eliminar usuarios del sistema. (COMPLETADO)
+        *   Botones para "Crear Nuevo", "Editar", "Eliminar".
+    *   **Páginas de Formulario (ej. Pacientes, Proveedores, Servicios):**
+        *   Formularios para crear y editar registros.
+        *   Validación de campos en el frontend.
+        *   Manejo de envío de datos a la API.
+        *   Mostrar mensajes de éxito/error.
+    *   **Confirmación de Eliminación:**
+        *   Modales de confirmación antes de eliminar un registro.
+
+4.  **Módulo Financiero (Core):**
+    *   **Gestión de Tratamientos:**
+        *   Página de listado de tratamientos.
+        *   Formulario de creación/edición de tratamiento:
+            *   Campos para seleccionar `paciente`, `proveedor`, `servicio` (con autocompletado/búsqueda).
+            *   Mostrar `costo_original_usd` del servicio seleccionado.
+            *   Campo editable para `costo_final_acordado_usd` y `justificacion_descuento`.
+            *   Campo para `fecha_tratamiento`.
+            *   **Integración con Lógica de Negocio Avanzada (PENDIENTE DE BACKEND):** Mostrar estado de cuenta del paciente (saldo a favor/pagos pendientes) al seleccionarlo.
+    *   **Registro de Pagos:**
+        *   Página de listado de pagos.
+        *   Formulario de creación de pago:
+            *   Campos para `paciente`, `tratamiento` (opcional), `monto`, `moneda_pago`, `metodo_pago`, `referencia_pago`, `fecha_pago`.
+            *   Campo para `tasa_cambio_aplicada` (si `moneda_pago` es VES).
+    *   **Gestión de Tasa de Cambio:**
+        *   Página de listado de tasas de cambio históricas.
+        *   Formulario para registrar la tasa del día (solo `admin`).
+
+5.  **Módulo de Auditoría (Bitácora):**
+    *   **Página de Bitácora (solo Admin):**
+        *   Tabla para mostrar registros de auditoría.
+        *   Filtros por `rango de fechas` y `usuario`.
+        *   Paginación y ordenamiento.
+
+6.  **Componentes Reutilizables y Utilidades:**
+    *   Componentes de UI genéricos (botones, inputs, modales, tablas).
+    *   Servicios/utilidades para interactuar con la API (manejo de peticiones HTTP, errores).
+    *   Manejo global de estados de carga y notificaciones (toasts).

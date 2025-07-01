@@ -1,0 +1,29 @@
+Funcionalidades Implementadas:
+
+*   **Gestión de Entidades:**
+    *   CRUD completo para `pacientes` (Crear, Leer, Actualizar, Eliminar, Buscar).
+    *   CRUD completo para `proveedores` (Crear, Leer, Actualizar, Eliminar).
+    *   CRUD completo para `servicios` (Crear, Leer, Actualizar, Eliminar).
+*   **Módulo Financiero (Core):**
+    *   CRUD completo para `tratamientos` (Crear, Leer, Actualizar, Eliminar).
+    *   Registro de `pagos` (Crear, Leer).
+    *   Gestión de `tasas_de_cambio` (Crear, Leer).
+    *   Endpoint para obtener el estado de cuenta de un paciente (deudas y saldo a favor), con conversión de moneda a USD.
+*   **Autenticación y Seguridad:**
+    *   Sistema de autenticación de usuarios por sesión (`login`, `logout`, `register`).
+    *   Protección de todas las rutas de la API para que solo usuarios autenticados puedan acceder.
+    *   Implementación de roles (`admin`, `recepcionista`) para restringir el acceso a funcionalidades específicas.
+    *   Pruebas automatizadas para el sistema de autenticación (login, validación de credenciales).
+*   **Módulo de Auditoría (Bitácora):**
+    *   Endpoint para que el `admin` pueda consultar la bitácora, con filtros por fecha y usuario. (COMPLETADO)
+    *   Registro automático de acciones (Crear, Actualizar, Eliminar) en los módulos de `pacientes`, `proveedores`, `servicios` y `tratamientos`. (COMPLETADO)
+*   **Base de Datos y Backend:**
+    *   Esquema completo y robusto de la base de datos (`Propuesta1.sql`).
+    *   Estructura de backend organizada y escalable (MVC).
+ 
+Funcionalidades Pendientes:
+
+*   **Completar Módulo de Auditoría (Bitácora):**
+    *   Extender el registro de acciones al controlador de `pagos`. (COMPLETADO)
+*   **Lógica de Negocio Avanzada:**
+    *   Implementar el flujo de trabajo donde, al crear un tratamiento, el sistema verifique el estado de cuenta del paciente (saldo a favor o pagos pendientes) y aplique la lógica financiera correspondiente (ej. usar saldo a favor, registrar deuda).

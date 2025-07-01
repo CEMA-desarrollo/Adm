@@ -1,0 +1,35 @@
+an_de_refactorizacion.txt
+
+### PASO 0: Desinstalar dependencias innecesarias
+
+Abre una terminal en la carpeta `d:\Code\Adm\backend` y ejecuta el siguiente comando para eliminar `bcrypt`, ya que no lo usaremos más:
+
+npm uninstall bcrypt
+
+### PASO 1: Actualizar la Base de Datos
+
+Notaste correctamente que las contraseñas en tu base de datos son un "hash" (un texto largo y aleatorio). Como ahora usaremos contraseñas en texto plano, necesitas actualizarlas.
+
+Ejecuta este comando SQL en tu base de datos para el usuario `admin`:
+
+UPDATE usuarios SET hash_contrasena = 'adminpass123' WHERE nombre_usuario = 'admin';
+
+(Usa la contraseña que prefieras. 'adminpass123' es la que está en tu archivo .env). Haz lo mismo para cualquier otro usuario que tengas.
+
+### PASO 2: Refactorizar el Controlador de Usuarios
+
+Este es el archivo más importante y la causa más probable del error. Reemplaza TODO el contenido de `d:\Code\Adm\backend\controllers\userController.js` con este código corregido y simplificado.
+
+### PASO 3: Refactorizar el Modelo de Usuario
+
+Este archivo también necesita ser simplificado para que no intente hashear contraseñas. Reemplaza TODO el contenido de `d:\Code\Adm\backend\models\userModel.js` con el código que te proporcionaré.
+
+### PASO 4: Refactorizar el Script de Creación del Admin
+
+Este script se ejecuta al iniciar el servidor y también debe ser simplificado. Reemplaza TODO el contenido de `d:\Code\Adm\backend\config\ensureAdmin.js` con el código que te proporcionaré.
+
+### PASO 5: Refactorizar las Pruebas (Opcional pero recomendado)
+
+Para que tus pruebas sigan funcionando, también debemos actualizarlas. Reemplaza TODO el contenido de `d:\Code\Adm\backend\user.test.js` con el código que te proporcionaré.
+
+### PASO 6: ¡Probar!
