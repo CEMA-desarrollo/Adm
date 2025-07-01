@@ -151,33 +151,56 @@
  const updateTratamiento = async (req, res) => {
    try {
      const { id } = req.params;
-     const updateData = req.body || {};
+     const requestBody = req.body || {};
  
-     const { paciente_id, proveedor_id, servicio_id, fecha_tratamiento, costo_final_acordado_usd } = updateData;
-     if (!paciente_id || !proveedor_id || !servicio_id || !fecha_tratamiento || costo_final_acordado_usd === undefined) {
-       return res.status(400).json({ message: 'Faltan campos obligatorios para actualizar el tratamiento.' });
-     }
- 
-     const estadoAnterior = await Tratamiento.findById(id);
-     if (!estadoAnterior) {
+     const tratamientoActual = await Tratamiento.findById(id);
+     if (!tratamientoActual) {
        return res.status(404).json({ message: 'Tratamiento no encontrado para actualizar.' });
      }
  
-     // Si el servicio cambia, actualizamos el costo original
-     if (updateData.servicio_id && updateData.servicio_id !== estadoAnterior.servicio_id) {
-         const servicio = await Servicio.findById(updateData.servicio_id);
-         if (!servicio) {
-             return res.status(404).json({ message: `Servicio con id ${updateData.servicio_id} no encontrado.` });
-         }
-         updateData.costo_original_usd = servicio.precio_sugerido_usd;
-     } else {
-       // Mantenemos el costo original si el servicio no cambia
-       updateData.costo_original_usd = estadoAnterior.costo_original_usd;
+     // Construir el objeto de datos para actualizar, usando valores existentes si no se proporcionan nuevos
+     const datosParaActualizar = {
+       paciente_id: requestBody.paciente_id || tratamientoActual.paciente_id,
+       proveedor_id: requestBody.proveedor_id || tratamientoActual.proveedor_id,
+       servicio_id: requestBody.servicio_id || tratamientoActual.servicio_id,
+       descripcion_adicional: requestBody.descripcion_adicional !== undefined ? requestBody.descripcion_adicional : tratamientoActual.descripcion_adicional,
+       costo_original_usd: tratamientoActual.costo_original_usd, // El costo original no debería cambiar a menos que cambie el servicio
+       costo_final_acordado_usd: requestBody.costo_final_acordado_usd !== undefined ? requestBody.costo_final_acordado_usd : tratamientoActual.costo_final_acordado_usd,
+       justificacion_descuento: requestBody.justificacion_descuento !== undefined ? requestBody.justificacion_descuento : tratamientoActual.justificacion_descuento,
+       estado: requestBody.estado || tratamientoActual.estado,
+       fecha_tratamiento: requestBody.fecha_tratamiento || tratamientoActual.fecha_tratamiento,
+     };
+
+     // Si el servicio_id está cambiando, recalcular el costo_original_usd
+     if (requestBody.servicio_id && requestBody.servicio_id !== tratamientoActual.servicio_id) {
+       const nuevoServicio = await Servicio.findById(requestBody.servicio_id);
+       if (!nuevoServicio) {
+         return res.status(404).json({ message: `El nuevo servicio con id ${requestBody.servicio_id} no fue encontrado.` });
+       }
+       datosParaActualizar.costo_original_usd = nuevoServicio.precio_sugerido_usd;
+       // Si el costo final no se especifica al cambiar el servicio, podría recalcularse o requerirse.
+       // Por ahora, si no se provee costo_final_acordado_usd, se mantiene el anterior, lo cual puede ser inconsistente.
+       // Mejorar: Si servicio cambia y costo_final_acordado_usd no está en requestBody, quizás debería tomar el nuevo costo_original_usd.
+       if (requestBody.costo_final_acordado_usd === undefined) {
+            datosParaActualizar.costo_final_acordado_usd = nuevoServicio.precio_sugerido_usd;
+       }
      }
  
-     const affectedRows = await Tratamiento.update(id, updateData);
-     if (affectedRows === 0) {
-       return res.status(404).json({ message: 'Tratamiento no encontrado.' });
+     // Validar que los campos clave no queden vacíos si se intentan modificar a un valor "falsy" pero no null/undefined
+     // Esta validación es más laxa que la de creación, permite actualizar solo algunos campos.
+     console.log('[DEBUG] tratamientoActual:', JSON.stringify(tratamientoActual, null, 2));
+     console.log('[DEBUG] requestBody:', JSON.stringify(requestBody, null, 2));
+     console.log('[DEBUG] datosParaActualizar PRE-VALIDATION:', JSON.stringify(datosParaActualizar, null, 2));
+
+     if (datosParaActualizar.paciente_id === null || datosParaActualizar.proveedor_id === null || datosParaActualizar.servicio_id === null || datosParaActualizar.fecha_tratamiento === null || datosParaActualizar.costo_final_acordado_usd === null || datosParaActualizar.estado === null) {
+        console.error('[VALIDATION_ERROR] One of the key fields is null in datosParaActualizar:', JSON.stringify(datosParaActualizar, null, 2));
+        return res.status(400).json({ message: 'Los campos paciente_id, proveedor_id, servicio_id, fecha_tratamiento, costo_final_acordado_usd y estado no pueden ser nulos.' });
+     }
+
+
+     const tratamientoActualizadoEnModelo = await Tratamiento.update(id, datosParaActualizar);
+     if (!tratamientoActualizadoEnModelo) { // El modelo ahora devuelve el objeto o null
+       return res.status(404).json({ message: 'Tratamiento no encontrado o error al actualizar.' });
      }
  
      // --- Registro en Bitácora ---
@@ -186,11 +209,11 @@
        accion: 'ACTUALIZACIÓN',
        tabla_afectada: 'tratamientos',
        registro_id_afectado: id,
-       detalles: { valor_anterior: estadoAnterior, nuevo_valor: updateData }
+       detalles: { valor_anterior: tratamientoActual, nuevo_valor: tratamientoActualizadoEnModelo }
      });
      // --- Fin Registro en Bitácora ---
  
-     res.json({ id: Number(id), ...updateData });
+     res.json(tratamientoActualizadoEnModelo);
    } catch (error) {
      console.error(`Error al actualizar tratamiento ${req.params.id}:`, error);
      if (error.code === 'ER_NO_REFERENCED_ROW_2') {
@@ -200,37 +223,62 @@
    }
  };
  
- const deleteTratamiento = async (req, res) => {
+ const deleteTratamiento = async (req, res) => { // This function now "cancels" a treatment
    try {
      const { id } = req.params;
  
-     const estadoAnterior = await Tratamiento.findById(id);
-     if (!estadoAnterior) {
-       return res.status(404).json({ message: 'Tratamiento no encontrado para eliminar.' });
+     const tratamientoActual = await Tratamiento.findById(id);
+     if (!tratamientoActual) {
+       return res.status(404).json({ message: 'Tratamiento no encontrado para cancelar.' });
+     }
+
+     // Check if already cancelled
+     if (tratamientoActual.estado === 'Cancelado') {
+        return res.status(400).json({ message: 'El tratamiento ya está cancelado.' });
      }
  
-     const affectedRows = await Tratamiento.delete(id);
-     if (affectedRows === 0) {
-       return res.status(404).json({ message: 'Tratamiento no encontrado.' });
+     // Prepare data for update - only changing estado and preserving all other fields
+     const datosParaCancelar = { ...tratamientoActual }; // Clone existing data
+     delete datosParaCancelar.id; // remove id as it's not part of SET in model's update
+     delete datosParaCancelar.created_at;
+     delete datosParaCancelar.updated_at;
+     // Ensure all necessary fields for the model's update method are present
+     // The model's update method takes a 'fieldsToUpdate' object.
+     // We need to ensure all fields expected by 'fieldsToUpdate' in Tratamiento.update are here.
+
+     const updatePayload = {
+        paciente_id: tratamientoActual.paciente_id,
+        proveedor_id: tratamientoActual.proveedor_id,
+        servicio_id: tratamientoActual.servicio_id,
+        descripcion_adicional: tratamientoActual.descripcion_adicional,
+        costo_original_usd: tratamientoActual.costo_original_usd,
+        costo_final_acordado_usd: tratamientoActual.costo_final_acordado_usd,
+        justificacion_descuento: tratamientoActual.justificacion_descuento,
+        fecha_tratamiento: tratamientoActual.fecha_tratamiento,
+        estado: 'Cancelado', // Set the new state
+     };
+
+     const tratamientoCancelado = await Tratamiento.update(id, updatePayload );
+
+     if (!tratamientoCancelado) {
+       return res.status(500).json({ message: 'Error al intentar cancelar el tratamiento.' });
      }
  
      // --- Registro en Bitácora ---
      await Bitacora.create({
        usuario_id: req.session.user.id,
-       accion: 'ELIMINACIÓN',
+       accion: 'CANCELACIÓN', // Changed from ELIMINACIÓN
        tabla_afectada: 'tratamientos',
        registro_id_afectado: id,
-       detalles: { valor_eliminado: estadoAnterior }
+       detalles: { valor_anterior: tratamientoActual, nuevo_valor: tratamientoCancelado }
      });
      // --- Fin Registro en Bitácora ---
  
-     res.status(204).send();
+     res.status(200).json(tratamientoCancelado); // Return the updated treatment
    } catch (error) {
-     console.error(`Error al eliminar tratamiento ${req.params.id}:`, error);
-     if (error.code === 'ER_ROW_IS_REFERENCED_2') {
-       return res.status(409).json({ message: 'No se puede eliminar el tratamiento porque tiene pagos asociados.' });
-     }
-     res.status(500).json({ message: 'Error interno del servidor.' });
+     console.error(`Error al cancelar tratamiento ${req.params.id}:`, error);
+     // ER_ROW_IS_REFERENCED_2 should not be an issue for a status update
+     res.status(500).json({ message: 'Error interno del servidor al cancelar el tratamiento.' });
    }
  };
 

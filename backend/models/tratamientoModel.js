@@ -59,10 +59,11 @@ const Tratamiento = {
     return rows;
   },
 
-  async delete(id) {
-    const [result] = await pool.query('DELETE FROM tratamientos WHERE id = ?', [id]);
-    return result.affectedRows;
-  },
+  // Hard delete removed as per requirement to only cancel treatments (update status)
+  // async delete(id) {
+  //   const [result] = await pool.query('DELETE FROM tratamientos WHERE id = ?', [id]);
+  //   return result.affectedRows;
+  // },
 
   // Puedes añadir más funciones como findById si las necesitas.
 };
