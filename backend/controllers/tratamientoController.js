@@ -146,6 +146,7 @@
      res.status(500).json({ message: 'Error interno del servidor.' });
    }
  };
+ 
 
  const updateTratamiento = async (req, res) => {
    try {

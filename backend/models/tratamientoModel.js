@@ -2,10 +2,10 @@ const pool = require('../config/db');
 
 const Tratamiento = {
   async create(tratamientoData) {
-    // Se elimina la columna 'estado' que no existe en la base de datos.
+    // Ahora incluimos el estado, que viene del frontend o usa un default.
     const [result] = await pool.query(
-      `INSERT INTO tratamientos (paciente_id, proveedor_id, servicio_id, descripcion_adicional, costo_original_usd, costo_final_acordado_usd, justificacion_descuento, fecha_tratamiento)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO tratamientos (paciente_id, proveedor_id, servicio_id, descripcion_adicional, costo_original_usd, costo_final_acordado_usd, justificacion_descuento, fecha_tratamiento, estado)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         tratamientoData.paciente_id,
         tratamientoData.proveedor_id,
@@ -15,6 +15,7 @@ const Tratamiento = {
         tratamientoData.costo_final_acordado_usd,
         tratamientoData.justificacion_descuento,
         tratamientoData.fecha_tratamiento,
+        tratamientoData.estado || 'Programado', // Aseguramos que siempre haya un estado.
       ]
     );
     // Devolvemos el tratamiento completo con los nombres de las entidades relacionadas.
@@ -22,17 +23,29 @@ const Tratamiento = {
   },
 
   async update(id, tratamientoData) {
-    // Se elimina la columna 'estado' y se asegura de actualizar solo los campos permitidos.
-    const fieldsToUpdate = {
-      paciente_id: tratamientoData.paciente_id,
-      proveedor_id: tratamientoData.proveedor_id,
-      servicio_id: tratamientoData.servicio_id,
-      descripcion_adicional: tratamientoData.descripcion_adicional,
-      costo_original_usd: tratamientoData.costo_original_usd,
-      costo_final_acordado_usd: tratamientoData.costo_final_acordado_usd,
-      justificacion_descuento: tratamientoData.justificacion_descuento,
-      fecha_tratamiento: tratamientoData.fecha_tratamiento,
-    };
+    // Esta es la corrección clave.
+    // El método ahora es flexible y puede manejar actualizaciones completas o parciales.
+    
+    // Lista de campos permitidos para la actualización para mayor seguridad.
+    const allowedFields = [
+      'paciente_id', 'proveedor_id', 'servicio_id', 'descripcion_adicional', 
+      'costo_original_usd', 'costo_final_acordado_usd', 'justificacion_descuento', 
+      'fecha_tratamiento', 'estado'
+    ];
+
+    const fieldsToUpdate = {};
+    // Construimos un objeto solo con los campos permitidos que vienen en la petición.
+    for (const field of allowedFields) {
+        if (tratamientoData[field] !== undefined) {
+            fieldsToUpdate[field] = tratamientoData[field];
+        }
+    }
+
+    // Si no hay campos válidos para actualizar, no hacemos nada en la BD.
+    if (Object.keys(fieldsToUpdate).length === 0) {
+      console.warn(`Update attempt on tratamiento ${id} with no valid fields.`);
+      return this.findById(id); // Devolvemos el objeto sin cambios.
+    }
 
     const [result] = await pool.query('UPDATE tratamientos SET ? WHERE id = ?', [fieldsToUpdate, id]);
     if (result.affectedRows > 0) {
@@ -42,7 +55,7 @@ const Tratamiento = {
   },
 
   async findAll() {
-    // Se enriquecen los datos con los nombres de las entidades relacionadas.
+    // Se enriquecen los datos con los nombres de las entidades relacionadas. La columna 'estado' se incluye con t.*
     const [rows] = await pool.query(`
       SELECT 
         t.*,
