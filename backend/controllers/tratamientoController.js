@@ -64,7 +64,8 @@
        costo_original_usd,
        costo_final_acordado_usd: costo_final_acordado_usd !== undefined ? costo_final_acordado_usd : costo_original_usd,
        justificacion_descuento,
-       fecha_tratamiento
+       fecha_tratamiento,
+       estado: 'Registrado' // Default status
      };
 
      let montoPendienteTratamiento = nuevoTratamientoData.costo_final_acordado_usd;
@@ -94,7 +95,7 @@
        // Si el tratamiento se cubre completamente, marcarlo como facturado
        if (montoPendienteTratamiento <= 0) {
          tratamientoFacturado = true;
-         nuevoTratamientoData.facturado = true; // Actualizar el campo en los datos del tratamiento
+         // nuevoTratamientoData.facturado = true; // No 'facturado' column in DB
        }
 
        // Guardar el pago por saldo a favor. El tratamiento_id se actualizará después.
