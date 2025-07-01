@@ -12,32 +12,32 @@
 
         <v-spacer></v-spacer>
 
-        <v-text-field
-          v-model="search"
-          density="compact"
-          label="Buscar"
-          prepend-inner-icon="mdi-magnify"
-          variant="solo-filled"
-          flat
-          hide-details
-          single-line
-        ></v-text-field>
-
-        <v-text-field
-          v-model="filterDate"
-          type="date"
-          density="compact"
-          label="Filtrar por fecha"
-          class="ms-4"
-          style="max-width: 200px;"
-          clearable
-        ></v-text-field>
-
         <v-btn class="ms-4" color="primary" @click="openNewTratamientoDialog">
           <v-icon icon="mdi-plus"></v-icon>
           Añadir Tratamiento
         </v-btn>
       </v-card-title>
+
+      <v-card-text>
+        <v-row align="center">
+          <v-col cols="12" md="4">
+            <v-text-field
+              v-model="search"
+              density="compact"
+              label="Buscar paciente, proveedor o servicio..."
+              prepend-inner-icon="mdi-magnify"
+              variant="outlined"
+              hide-details
+            ></v-text-field>
+          </v-col>
+          <v-col cols="12" sm="6" md="4">
+            <v-text-field v-model="filterStartDate" type="date" label="Desde" variant="outlined" density="compact" hide-details></v-text-field>
+          </v-col>
+          <v-col cols="12" sm="6" md="4">
+            <v-text-field v-model="filterEndDate" type="date" label="Hasta" variant="outlined" density="compact" hide-details></v-text-field>
+          </v-col>
+        </v-row>
+      </v-card-text>
 
       <v-divider></v-divider>
 
@@ -161,7 +161,25 @@ const serviciosList = ref([]);
 const serviciosAsignados = ref([]);
 const isLoadingServicios = ref(false);
 
-const filterDate = ref(new Date().toISOString().substr(0, 10)); // Filtro por fecha, por defecto hoy
+const getWeekRange = () => {
+  const today = new Date();
+  const day = today.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+  const diffToMonday = day === 0 ? -6 : 1 - day; // Adjust for Sunday
+  
+  const monday = new Date(today);
+  monday.setDate(today.getDate() + diffToMonday);
+  
+  const saturday = new Date(monday);
+  saturday.setDate(monday.getDate() + 5);
+  
+  const format = (date) => date.toISOString().split('T')[0];
+  
+  return { start: format(monday), end: format(saturday) };
+};
+
+const { start: weekStart, end: weekEnd } = getWeekRange();
+const filterStartDate = ref(weekStart);
+const filterEndDate = ref(weekEnd);
 
 const defaultItem = {
   id: null,
@@ -191,11 +209,16 @@ const headers = ref([
 const formTitle = computed(() => (editedItem.value.id ? 'Editar Tratamiento' : 'Nuevo Tratamiento'));
 
 const filteredTratamientos = computed(() => {
-  if (!filterDate.value) {
-    return tratamientos.value; // Si no hay fecha, mostrar todos
-  }
-  // Filtra los tratamientos cuya fecha (YYYY-MM-DD) coincida con la fecha del filtro
-  return tratamientos.value.filter(t => t.fecha_tratamiento.startsWith(filterDate.value));
+  return tratamientos.value.filter(t => {
+    // Si no hay fechas de filtro, no se aplica filtro de fecha.
+    if (!filterStartDate.value && !filterEndDate.value) return true;
+    
+    const treatmentDate = t.fecha_tratamiento.split('T')[0];
+    const isAfterStart = filterStartDate.value ? treatmentDate >= filterStartDate.value : true;
+    const isBeforeEnd = filterEndDate.value ? treatmentDate <= filterEndDate.value : true;
+    
+    return isAfterStart && isBeforeEnd;
+  });
 });
 
 const serviciosFiltrados = computed(() => {
@@ -253,8 +276,11 @@ onMounted(loadInitialData);
 watch(() => editedItem.value.proveedor_id, async (newProviderId, oldProviderId) => {
   if (newProviderId === oldProviderId) return;
 
-  // Reseteamos la selección de servicio y la lista de asignados
-  editedItem.value.servicio_id = null;
+  // Solo reseteamos el servicio si el usuario cambia activamente el proveedor en el formulario.
+  // Si oldProviderId es nulo, significa que estamos inicializando el formulario para una edición.
+  if (oldProviderId) {
+    editedItem.value.servicio_id = null;
+  }
   serviciosAsignados.value = [];
 
   if (newProviderId) {
@@ -300,19 +326,9 @@ async function editTratamiento(item) {
     editedItem.value.fecha_tratamiento = editedItem.value.fecha_tratamiento.substr(0, 10);
   }
 
-  // Precargar los servicios asignados al proveedor para que el selector funcione
-  if (editedItem.value.proveedor_id) {
-    isLoadingServicios.value = true;
-    try {
-      const assigned = await proveedorService.getServicesByProveedor(editedItem.value.proveedor_id);
-      serviciosAsignados.value = assigned;
-    } catch (error) {
-      console.error(`Error al cargar servicios para el proveedor ${editedItem.value.proveedor_id}:`, error);
-      showSnackbar('Error al cargar servicios del proveedor.', 'error');
-    } finally {
-      isLoadingServicios.value = false;
-    }
-  }
+  // Al asignar un nuevo valor a `editedItem`, el watcher de `proveedor_id` se
+  // disparará automáticamente y cargará los servicios correspondientes.
+  // Por lo tanto, no es necesario cargar los servicios aquí.
   dialog.value = true;
 }
 
