@@ -51,6 +51,11 @@ const Tratamiento = {
     return rows[0];
   },
 
+  async findByPatientId(paciente_id) {
+    const [rows] = await pool.query('SELECT * FROM tratamientos WHERE paciente_id = ? ORDER BY fecha_tratamiento DESC, created_at DESC', [paciente_id]);
+    return rows;
+  },
+
   // Puedes añadir más funciones como findById si las necesitas.
 };
 
