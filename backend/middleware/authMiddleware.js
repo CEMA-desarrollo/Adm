@@ -7,11 +7,11 @@ const isAuthenticated = (req, res, next) => {
 };
 
 const isAdmin = (req, res, next) => {
-  if (req.session.user && req.session.user.rol === 'admin') {
+  if (req.session.user && req.session.user.rol === 'Administrador') { // Changed 'admin' to 'Administrador'
     return next();
   }
   // Si no es admin, se devuelve un error 403 (Prohibido)
-  res.status(403).json({ message: 'Acceso denegado. Se requiere rol de administrador.' });
+  res.status(403).json({ message: 'Acceso denegado. Se requiere rol de Administrador.' }); // Updated message
 };
 
 const authorizeRole = (roles) => {

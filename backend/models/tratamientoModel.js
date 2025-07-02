@@ -2,6 +2,9 @@ const pool = require('../config/db');
 
 const Tratamiento = {
   async create(tratamientoData) {
+    // Ensure 'estado' has a default value if not provided
+    const estado = tratamientoData.estado || 'Registrado';
+
     const [result] = await pool.query(
       `INSERT INTO tratamientos (paciente_id, proveedor_id, servicio_id, descripcion_adicional, costo_original_usd, costo_final_acordado_usd, justificacion_descuento, estado, fecha_tratamiento)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -13,7 +16,7 @@ const Tratamiento = {
         tratamientoData.costo_original_usd,
         tratamientoData.costo_final_acordado_usd,
         tratamientoData.justificacion_descuento,
-        tratamientoData.estado,
+        estado, // Use the potentially defaulted estado
         tratamientoData.fecha_tratamiento,
       ]
     );
@@ -50,6 +53,17 @@ const Tratamiento = {
     const [rows] = await pool.query('SELECT * FROM tratamientos WHERE id = ?', [id]);
     return rows[0];
   },
+
+  async findByPatientId(paciente_id) {
+    const [rows] = await pool.query('SELECT * FROM tratamientos WHERE paciente_id = ? ORDER BY fecha_tratamiento DESC, created_at DESC', [paciente_id]);
+    return rows;
+  },
+
+  // Hard delete removed as per requirement to only cancel treatments (update status)
+  // async delete(id) {
+  //   const [result] = await pool.query('DELETE FROM tratamientos WHERE id = ?', [id]);
+  //   return result.affectedRows;
+  // },
 
   // Puedes añadir más funciones como findById si las necesitas.
 };
