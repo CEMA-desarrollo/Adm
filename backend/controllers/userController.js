@@ -26,8 +26,8 @@ async function login(req, res) {
     }
     console.log(`[AUTH] Usuario "${nombre_usuario}" encontrado. Rol: ${user.rol}. Verificando contraseña...`);
 
-    // ADVERTENCIA DE SEGURIDAD: Comparación de contraseña en texto plano. NO USAR EN PRODUCCIÓN.
-    const isMatch = password === user.hash_contrasena;
+    // Comparación de contraseña en texto plano.
+    const isMatch = password === user.password; // Changed from user.hash_contrasena
 
     if (!isMatch) {
       console.log(`[AUTH-ERROR] La contraseña para el usuario "${nombre_usuario}" no coincide.`);
@@ -37,23 +37,15 @@ async function login(req, res) {
     console.log(`[AUTH-SUCCESS] Login exitoso para "${nombre_usuario}". Creando sesión.`);
 
     // Guardar información del usuario en la sesión
-    // Ahora incluimos los nuevos campos que vienen del modelo
-    req.session.user = {
-      id: user.id,
-      nombre_usuario: user.nombre_usuario,
-      nombre: user.nombre,
-      apellido: user.apellido,
-      fecha_nacimiento: user.fecha_nacimiento,
-      url_imagen: user.url_imagen,
-      rol: user.rol,
-      activo: user.activo // útil tener el estado activo en la sesión
-    };
+    // user object from model now has 'password' field instead of 'hash_contrasena'
+    const { password: _, ...sessionUser } = user; // Exclude password from session
+    req.session.user = sessionUser;
 
     // Devolver la información del usuario al cliente (sin contraseña)
-    const { hash_contrasena, ...userResponse } = user;
+    // sessionUser already excludes the password
     res.json({
       message: 'Login exitoso',
-      user: userResponse,
+      user: sessionUser,
     });
   } catch (error) {
     console.error(`[AUTH-FATAL] Error inesperado en el proceso de login:`, error);
@@ -97,7 +89,7 @@ async function createUser(req, res) {
 
     const createData = {
         nombre_usuario,
-        hash_contrasena: password, // Contraseña en texto plano
+        password: password, // Changed from hash_contrasena
         rol,
         nombre,
         apellido,
@@ -107,8 +99,7 @@ async function createUser(req, res) {
 
     const newUser = await User.create(createData);
     
-    // newUser ya no tiene hash_contrasena por la lógica del modelo
-    // El modelo devuelve el objeto sin hash_contrasena
+    // newUser already excludes password due to model logic.
 
     // Registrar en la bitácora
     await Bitacora.create({

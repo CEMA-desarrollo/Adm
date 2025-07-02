@@ -25,7 +25,7 @@ async function ensureAdminUser() {
         apellido: 'User', // Default apellido
         fecha_nacimiento: null, // Default
         url_imagen: null, // Default
-        hash_contrasena: adminPassword, // Se guarda la contraseña en texto plano
+        password: adminPassword, // Changed from hash_contrasena
         rol: 'admin'
       });
 
