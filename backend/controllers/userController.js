@@ -37,20 +37,23 @@ async function login(req, res) {
     console.log(`[AUTH-SUCCESS] Login exitoso para "${nombre_usuario}". Creando sesión.`);
 
     // Guardar información del usuario en la sesión
+    // Ahora incluimos los nuevos campos que vienen del modelo
     req.session.user = {
       id: user.id,
       nombre_usuario: user.nombre_usuario,
+      nombre: user.nombre,
+      apellido: user.apellido,
+      fecha_nacimiento: user.fecha_nacimiento,
+      url_imagen: user.url_imagen,
       rol: user.rol,
+      activo: user.activo // útil tener el estado activo en la sesión
     };
 
-    // Devolver solo la información necesaria al cliente
+    // Devolver la información del usuario al cliente (sin contraseña)
+    const { hash_contrasena, ...userResponse } = user;
     res.json({
       message: 'Login exitoso',
-      user: {
-        id: user.id,
-        nombre_usuario: user.nombre_usuario,
-        rol: user.rol,
-      },
+      user: userResponse,
     });
   } catch (error) {
     console.error(`[AUTH-FATAL] Error inesperado en el proceso de login:`, error);
@@ -87,16 +90,25 @@ async function getAllUsers(req, res) {
 
 async function createUser(req, res) {
   try {
-    const { nombre_usuario, password, rol } = req.body;
-    if (!nombre_usuario || !password || !rol) {
-        return res.status(400).json({ message: 'Nombre de usuario, contraseña y rol son requeridos.' });
+    const { nombre_usuario, password, rol, nombre, apellido, fecha_nacimiento, url_imagen } = req.body;
+    if (!nombre_usuario || !password || !rol || !nombre || !apellido) { // nombre y apellido son ahora requeridos
+        return res.status(400).json({ message: 'Nombre de usuario, contraseña, rol, nombre y apellido son requeridos.' });
     }
 
-    // SIN BCRYPT: Guardamos la contraseña directamente en el campo hash_contrasena
-    const newUser = await User.create({ nombre_usuario, hash_contrasena: password, rol });
+    const createData = {
+        nombre_usuario,
+        hash_contrasena: password, // Contraseña en texto plano
+        rol,
+        nombre,
+        apellido,
+        fecha_nacimiento: fecha_nacimiento || null, // opcional
+        url_imagen: url_imagen || null // opcional
+    };
+
+    const newUser = await User.create(createData);
     
-    // No devolver la contraseña en la respuesta
-    const { hash_contrasena: _, ...userSinPassword } = newUser;
+    // newUser ya no tiene hash_contrasena por la lógica del modelo
+    // El modelo devuelve el objeto sin hash_contrasena
 
     // Registrar en la bitácora
     await Bitacora.create({
@@ -104,11 +116,11 @@ async function createUser(req, res) {
       accion: 'CREACIÓN',
       tabla_afectada: 'usuarios',
       registro_id_afectado: newUser.id,
-      detalles: { nuevo_valor: userSinPassword }
+      detalles: { nuevo_valor: newUser } // newUser ya está limpio de contraseña
     });
 
     console.log(`[USER-MGMT] Usuario "${nombre_usuario}" creado por "${req.session.user.nombre_usuario}".`);
-    res.status(201).json(userSinPassword);
+    res.status(201).json(newUser);
   } catch (error) {
     console.error('Error al crear el usuario:', error);
     // Manejar error de usuario duplicado
@@ -122,7 +134,27 @@ async function createUser(req, res) {
 async function updateUser(req, res) {
   try {
     const { id } = req.params;
-    const { nombre_usuario, rol, activo } = req.body;
+    // Extract all possible fields from body, including new ones
+    const { nombre_usuario, nombre, apellido, fecha_nacimiento, url_imagen, rol, activo } = req.body;
+
+    const updateData = {};
+    if (nombre_usuario !== undefined) updateData.nombre_usuario = nombre_usuario;
+    if (nombre !== undefined) updateData.nombre = nombre;
+    if (apellido !== undefined) updateData.apellido = apellido;
+    if (fecha_nacimiento !== undefined) updateData.fecha_nacimiento = fecha_nacimiento || null; // Allow setting to null
+    if (url_imagen !== undefined) updateData.url_imagen = url_imagen || null; // Allow setting to null
+    if (rol !== undefined) updateData.rol = rol;
+    if (activo !== undefined) updateData.activo = activo;
+
+
+    if (Object.keys(updateData).length === 0) {
+        return res.status(400).json({ message: 'No se proporcionaron datos para actualizar.' });
+    }
+
+    // Validar que si nombre o apellido se envían, no sean vacíos (si son obligatorios)
+    if (updateData.nombre === '') return res.status(400).json({ message: 'El nombre no puede ser vacío.' });
+    if (updateData.apellido === '') return res.status(400).json({ message: 'El apellido no puede ser vacío.' });
+
 
     // Obtener el estado actual para la bitácora
     const valor_anterior = await User.findById(id);
@@ -130,11 +162,21 @@ async function updateUser(req, res) {
       return res.status(404).json({ message: 'Usuario no encontrado.' });
     }
 
-    const updated = await User.update(id, { nombre_usuario, rol, activo });
+    const updated = await User.update(id, updateData);
     if (!updated) {
-        // Esto es redundante si ya verificamos arriba, pero es una buena práctica
         return res.status(404).json({ message: 'Usuario no encontrado o sin cambios.' });
     }
+
+    // Para la bitácora, construimos el objeto valor_anterior con todos los campos relevantes
+    const valorAnteriorParaBitacora = {
+        nombre_usuario: valor_anterior.nombre_usuario,
+        nombre: valor_anterior.nombre,
+        apellido: valor_anterior.apellido,
+        fecha_nacimiento: valor_anterior.fecha_nacimiento,
+        url_imagen: valor_anterior.url_imagen,
+        rol: valor_anterior.rol,
+        activo: valor_anterior.activo
+    };
 
     // Registrar en la bitácora
     await Bitacora.create({
@@ -143,17 +185,15 @@ async function updateUser(req, res) {
       tabla_afectada: 'usuarios',
       registro_id_afectado: id,
       detalles: { 
-        valor_anterior: {
-            nombre_usuario: valor_anterior.nombre_usuario,
-            rol: valor_anterior.rol,
-            activo: valor_anterior.activo
-        },
-        cambios: { nombre_usuario, rol, activo } 
+        valor_anterior: valorAnteriorParaBitacora,
+        cambios: updateData // Log only the changes sent
       }
     });
 
     console.log(`[USER-MGMT] Usuario ID ${id} actualizado por "${req.session.user.nombre_usuario}".`);
-    res.json({ message: 'Usuario actualizado con éxito.' });
+    // Devolver el usuario actualizado (sin contraseña)
+    const usuarioActualizado = await User.findById(id); // Re-fetch to get the complete updated record
+    res.json(usuarioActualizado);
   } catch (error) {
     console.error(`Error al actualizar el usuario ${req.params.id}:`, error);
     res.status(500).json({ message: 'Error al actualizar el usuario.', error: error.message });
@@ -201,10 +241,10 @@ async function deleteUser(req, res) {
 const getProfile = (req, res) => {
   // Si el middleware 'isAuthenticated' pasó, la información del usuario está en la sesión.
   if (req.session.user) {
-    // Devolvemos solo los datos necesarios y seguros del usuario.
-    // El frontend espera 'id', 'nombre_usuario' y 'rol'.
-    const { id, nombre_usuario, rol } = req.session.user;
-    return res.json({ id, nombre_usuario, rol });
+    // Devolvemos todos los datos del usuario guardados en la sesión.
+    // El modelo User.findByUsername ya selecciona todos los campos necesarios (excepto contraseña).
+    // Y la función login ya los guarda en req.session.user.
+    return res.json(req.session.user);
   } else {
     // Esto es una salvaguarda, el middleware ya debería haberlo prevenido.
     return res.status(401).json({ message: 'No autorizado: No hay sesión activa.' });
