@@ -2,9 +2,11 @@ const pool = require('../config/db');
 
 const Tratamiento = {
   async create(tratamientoData) {
-    // Ahora incluimos el estado, que viene del frontend o usa un default.
+    // Ensure 'estado' has a default value if not provided
+    const estado = tratamientoData.estado || 'Registrado';
+
     const [result] = await pool.query(
-      `INSERT INTO tratamientos (paciente_id, proveedor_id, servicio_id, descripcion_adicional, costo_original_usd, costo_final_acordado_usd, justificacion_descuento, fecha_tratamiento, estado)
+      `INSERT INTO tratamientos (paciente_id, proveedor_id, servicio_id, descripcion_adicional, costo_original_usd, costo_final_acordado_usd, justificacion_descuento, estado, fecha_tratamiento)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         tratamientoData.paciente_id,
@@ -14,84 +16,56 @@ const Tratamiento = {
         tratamientoData.costo_original_usd,
         tratamientoData.costo_final_acordado_usd,
         tratamientoData.justificacion_descuento,
+        estado, // Use the potentially defaulted estado
         tratamientoData.fecha_tratamiento,
-        tratamientoData.estado || 'Programado', // Aseguramos que siempre haya un estado.
       ]
     );
-    // Devolvemos el tratamiento completo con los nombres de las entidades relacionadas.
-    return this.findById(result.insertId);
+    const [nuevoTratamiento] = await pool.query('SELECT * FROM tratamientos WHERE id = ?', [result.insertId]);
+    return nuevoTratamiento[0];
   },
 
   async update(id, tratamientoData) {
-    // Esta es la corrección clave.
-    // El método ahora es flexible y puede manejar actualizaciones completas o parciales.
+    // LA SOLUCIÓN CLAVE: Creamos un objeto limpio con solo los campos que existen en la tabla.
+    const fieldsToUpdate = {
+      paciente_id: tratamientoData.paciente_id,
+      proveedor_id: tratamientoData.proveedor_id,
+      servicio_id: tratamientoData.servicio_id,
+      descripcion_adicional: tratamientoData.descripcion_adicional,
+      costo_original_usd: tratamientoData.costo_original_usd,
+      costo_final_acordado_usd: tratamientoData.costo_final_acordado_usd,
+      justificacion_descuento: tratamientoData.justificacion_descuento,
+      estado: tratamientoData.estado,
+      fecha_tratamiento: tratamientoData.fecha_tratamiento,
+    };
+
+    await pool.query('UPDATE tratamientos SET ? WHERE id = ?', [fieldsToUpdate, id]);
     
-    // Lista de campos permitidos para la actualización para mayor seguridad.
-    const allowedFields = [
-      'paciente_id', 'proveedor_id', 'servicio_id', 'descripcion_adicional', 
-      'costo_original_usd', 'costo_final_acordado_usd', 'justificacion_descuento', 
-      'fecha_tratamiento', 'estado'
-    ];
-
-    const fieldsToUpdate = {};
-    // Construimos un objeto solo con los campos permitidos que vienen en la petición.
-    for (const field of allowedFields) {
-        if (tratamientoData[field] !== undefined) {
-            fieldsToUpdate[field] = tratamientoData[field];
-        }
-    }
-
-    // Si no hay campos válidos para actualizar, no hacemos nada en la BD.
-    if (Object.keys(fieldsToUpdate).length === 0) {
-      console.warn(`Update attempt on tratamiento ${id} with no valid fields.`);
-      return this.findById(id); // Devolvemos el objeto sin cambios.
-    }
-
-    const [result] = await pool.query('UPDATE tratamientos SET ? WHERE id = ?', [fieldsToUpdate, id]);
-    if (result.affectedRows > 0) {
-      return this.findById(id);
-    }
-    return null;
+    const [updatedTratamiento] = await pool.query('SELECT * FROM tratamientos WHERE id = ?', [id]);
+    return updatedTratamiento[0];
   },
 
   async findAll() {
-    // Se enriquecen los datos con los nombres de las entidades relacionadas. La columna 'estado' se incluye con t.*
-    const [rows] = await pool.query(`
-      SELECT 
-        t.*,
-        CONCAT(p.nombre, ' ', p.apellido) as paciente_nombre,
-        prov.nombre_completo as proveedor_nombre,
-        s.nombre_servicio as servicio_nombre
-      FROM tratamientos t
-      LEFT JOIN pacientes p ON t.paciente_id = p.id
-      LEFT JOIN proveedores prov ON t.proveedor_id = prov.id
-      LEFT JOIN servicios s ON t.servicio_id = s.id
-      ORDER BY t.fecha_tratamiento DESC, t.created_at DESC
-    `);
+    const [rows] = await pool.query('SELECT * FROM tratamientos ORDER BY fecha_tratamiento DESC, created_at DESC');
     return rows;
   },
 
   async findById(id) {
-    const [rows] = await pool.query(`
-      SELECT 
-        t.*,
-        CONCAT(p.nombre, ' ', p.apellido) as paciente_nombre,
-        prov.nombre_completo as proveedor_nombre,
-        s.nombre_servicio as servicio_nombre
-      FROM tratamientos t
-      LEFT JOIN pacientes p ON t.paciente_id = p.id
-      LEFT JOIN proveedores prov ON t.proveedor_id = prov.id
-      LEFT JOIN servicios s ON t.servicio_id = s.id
-      WHERE t.id = ?
-    `, [id]);
+    const [rows] = await pool.query('SELECT * FROM tratamientos WHERE id = ?', [id]);
     return rows[0];
   },
 
   async findByPatientId(paciente_id) {
-    // Esta consulta también se podría enriquecer, pero la mantengo simple por si se usa en un contexto que no necesita los JOINs.
     const [rows] = await pool.query('SELECT * FROM tratamientos WHERE paciente_id = ? ORDER BY fecha_tratamiento DESC, created_at DESC', [paciente_id]);
     return rows;
   },
+
+  // Hard delete removed as per requirement to only cancel treatments (update status)
+  // async delete(id) {
+  //   const [result] = await pool.query('DELETE FROM tratamientos WHERE id = ?', [id]);
+  //   return result.affectedRows;
+  // },
+
+  // Puedes añadir más funciones como findById si las necesitas.
 };
 
 module.exports = Tratamiento;

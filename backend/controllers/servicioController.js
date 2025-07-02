@@ -146,6 +146,11 @@ async function deleteServicioPermanently(req, res) {
       return res.status(404).json({ message: 'Servicio no encontrado.' });
     }
 
+    // Add this check:
+    if (valor_anterior.activo) {
+      return res.status(400).json({ message: 'No se puede eliminar permanentemente un servicio que está activo. Desactívelo primero.' });
+    }
+
     const deleted = await Servicio.deletePermanent(id);
 
     if (deleted) {
