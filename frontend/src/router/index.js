@@ -40,13 +40,13 @@ const routes = [
         path: 'especialidades',
         name: 'Especialidades',
         component: () => import('@/views/Especialidades.vue'),
-        meta: { requiresAuth: true, roles: ['admin'] } // Solo para administradores
+        meta: { requiresAuth: true, roles: ['Administrador'] } // Solo para administradores
       },
       {
         path: 'usuarios',
         name: 'Usuarios',
         component: () => import('@/views/Usuarios.vue'),
-        meta: { requiresAuth: true, roles: ['admin'] } // Solo para administradores
+        meta: { requiresAuth: true, roles: ['Administrador'] } // Solo para administradores
       },
     ],
   },
