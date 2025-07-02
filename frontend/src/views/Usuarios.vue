@@ -33,9 +33,17 @@
         loading-text="Cargando usuarios..."
         no-data-text="No se encontraron usuarios."
       >
-        <!-- Columna para mostrar Nombre y Apellido juntos -->
+        <!-- Columna para mostrar Avatar y Nombre Completo -->
         <template v-slot:item.nombre="{ item }">
-          {{ item.nombre }} {{ item.apellido }}
+          <div class="d-flex align-center py-2">
+            <v-avatar size="40" class="mr-3">
+              <!-- Lógica de avatar mejorada para cada item de la lista -->
+              <v-img 
+                :src="item.url_imagen || `https://avatar.iran.liara.run/username?username=${encodeURIComponent(item.nombre + ' ' + (item.apellido || ''))}`" 
+                :alt="`${item.nombre} ${item.apellido}`"></v-img>
+            </v-avatar>
+            <span>{{ item.nombre }} {{ item.apellido }}</span>
+          </div>
         </template>
         <template v-slot:item.activo="{ item }">
           <v-chip :color="item.activo ? 'green' : 'red'" dark>{{ item.activo ? 'Activo' : 'Inactivo' }}</v-chip>
@@ -80,6 +88,13 @@
                     :rules="[rules.required]"
                   ></v-text-field>
                 </v-col>
+                <v-col cols="12">
+                  <v-text-field
+                    v-model="editedItem.url_imagen"
+                    label="URL de la Foto de Perfil"
+                    prepend-icon="mdi-image"
+                  ></v-text-field>
+                </v-col>
                 <!-- Nuevo campo: Fecha de Nacimiento con Date Picker -->
                 <v-col cols="12">
                   <v-menu
@@ -118,7 +133,7 @@
                 <v-col cols="12" sm="6">
                   <v-select
                     v-model="editedItem.rol"
-                    :items="['admin', 'recepcionista']"
+                    :items="['Administrador', 'Recepción', 'Encargado', 'Propietario']"
                     label="Rol"
                     :rules="[rules.required]"
                   ></v-select>
@@ -176,8 +191,9 @@ const editedItem = ref({
   fecha_nacimiento: null,
   nombre_usuario: '',
   password: '',
-  rol: 'recepcionista',
+  rol: 'Recepción', // Corregido para coincidir con las opciones del select
   activo: true,
+  url_imagen: '',
 });
 
 const defaultItem = {
@@ -187,8 +203,9 @@ const defaultItem = {
   fecha_nacimiento: null,
   nombre_usuario: '',
   password: '',
-  rol: 'recepcionista',
+  rol: 'Recepción', // Corregido para coincidir con las opciones del select
   activo: true,
+  url_imagen: '',
 };
 
 const formTitle = computed(() => (editedItem.value.id ? 'Editar Usuario' : 'Nuevo Usuario'));

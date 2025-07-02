@@ -1,54 +1,14 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import authService from '@/services/authService'; // Importamos el servicio de autenticación
+import { navigationItems } from '@/navigation'; // Importamos la estructura de navegación centralizada
 
 const routes = [
   {
     path: '/', // La ruta raíz ahora usa el layout
     component: () => import('@/layouts/default/Default.vue'), // El componente principal es el layout
-    children: [
-      {
-        path: '', // La ruta hija vacía (la raíz '/')
-        name: 'Home', // Nombre de la ruta
-        component: () => import(/* webpackChunkName: "home" */ '@/views/Home.vue'),
-        meta: { requiresAuth: true } // Esta ruta requiere autenticación
-      },
-      {
-        path: 'pacientes',
-        name: 'Pacientes',
-        component: () => import('@/views/Pacientes.vue'),
-        meta: { requiresAuth: true }
-      },
-      {
-        path: 'proveedores',
-        name: 'Proveedores',
-        component: () => import('@/views/Proveedores.vue'),
-        meta: { requiresAuth: true }
-      },
-      {
-        path: 'servicios',
-        name: 'Servicios',
-        component: () => import('@/views/Servicios.vue'),
-        meta: { requiresAuth: true }
-      },
-      {
-        path: 'tratamientos',
-        name: 'Tratamientos',
-        component: () => import('@/views/Tratamientos.vue'),
-        meta: { requiresAuth: true }
-      },
-      {
-        path: 'especialidades',
-        name: 'Especialidades',
-        component: () => import('@/views/Especialidades.vue'),
-        meta: { requiresAuth: true, roles: ['Administrador'] } // Solo para administradores
-      },
-      {
-        path: 'usuarios',
-        name: 'Usuarios',
-        component: () => import('@/views/Usuarios.vue'),
-        meta: { requiresAuth: true, roles: ['Administrador'] } // Solo para administradores
-      },
-    ],
+    // Los hijos se generan dinámicamente desde nuestro archivo de navegación.
+    // Esto asegura que las rutas y los enlaces del menú estén siempre sincronizados.
+    children: navigationItems,
   },
   {
     path: '/login',
