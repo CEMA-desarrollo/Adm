@@ -1,6 +1,7 @@
 <template>
   <v-container>
     <v-card>
+      <!-- Encabezado revertido al diseño original -->
       <v-card-title class="d-flex align-center pe-2">
         <v-icon icon="mdi-account-group"></v-icon> &nbsp;
         Gestión de Pacientes
