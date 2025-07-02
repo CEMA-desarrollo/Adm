@@ -8,7 +8,7 @@ class User {
    * @returns {Promise<object|undefined>} El objeto de usuario o undefined si no se encuentra.
    */
   static async findByUsername(username) {
-    const [rows] = await dbPool.execute('SELECT * FROM usuarios WHERE nombre_usuario = ?', [username]);
+    const [rows] = await dbPool.execute('SELECT id, nombre_usuario, nombre, apellido, fecha_nacimiento, url_imagen, password, rol, activo FROM usuarios WHERE nombre_usuario = ?', [username]);
     return rows[0];
   }
 
@@ -17,8 +17,8 @@ class User {
    * @returns {Promise<Array<object>>} Un array de objetos de usuario.
    */
   static async findAll() {
-    // Excluimos el hash de la contraseña por seguridad en listados generales.
-    const [rows] = await dbPool.execute('SELECT id, nombre_usuario, rol, activo, created_at, updated_at FROM usuarios');
+    // Excluimos el password por seguridad en listados generales.
+    const [rows] = await dbPool.execute('SELECT id, nombre_usuario, nombre, apellido, fecha_nacimiento, url_imagen, rol, activo, created_at, updated_at FROM usuarios');
     return rows;
   }
 
@@ -28,42 +28,58 @@ class User {
    * @returns {Promise<object|undefined>} El objeto de usuario o undefined si no se encuentra.
    */
   static async findById(id) {
-    // Devuelve todos los campos excepto la contraseña para operaciones internas.
-    const [rows] = await dbPool.execute('SELECT id, nombre_usuario, rol, activo FROM usuarios WHERE id = ?', [id]);
+    // Devuelve todos los campos excepto el password para operaciones internas (o para mostrar perfil).
+    const [rows] = await dbPool.execute('SELECT id, nombre_usuario, nombre, apellido, fecha_nacimiento, url_imagen, rol, activo FROM usuarios WHERE id = ?', [id]);
     return rows[0];
   }
 
   /**
    * Crea un nuevo usuario.
-   * La contraseña se guarda en texto plano directamente.
-   * @param {object} newUser - Datos del nuevo usuario { nombre_usuario, hash_contrasena, rol }.
+   * @param {object} newUserData - Datos del nuevo usuario.
    * @returns {Promise<object>} El objeto del nuevo usuario creado, sin la contraseña.
    */
-  static async create(newUser) {
-    const { nombre_usuario, hash_contrasena, rol } = newUser;
-    // ADVERTENCIA: Se guarda la contraseña en texto plano.
+  static async create(newUserData) {
+    const { nombre_usuario, nombre, apellido, fecha_nacimiento, url_imagen, password, rol } = newUserData;
     const [result] = await dbPool.execute(
-      'INSERT INTO usuarios (nombre_usuario, hash_contrasena, rol, activo) VALUES (?, ?, ?, 1)',
-      [nombre_usuario, hash_contrasena, rol]
+      'INSERT INTO usuarios (nombre_usuario, nombre, apellido, fecha_nacimiento, url_imagen, password, rol, activo) VALUES (?, ?, ?, ?, ?, ?, ?, 1)',
+      [nombre_usuario, nombre, apellido, fecha_nacimiento, url_imagen, password, rol]
     );
     // Devolvemos el nuevo usuario sin la contraseña por seguridad.
-    const { hash_contrasena: _, ...userSinPassword } = newUser;
-    return { id: result.insertId, ...userSinPassword };
+    const { password: _, ...userSinPassword } = newUserData;
+    return { id: result.insertId, ...userSinPassword, activo: 1 }; // activo is 1 by default
   }
 
   /**
    * Actualiza los datos de un usuario (sin incluir la contraseña).
    * @param {number} id - El ID del usuario a actualizar.
-   * @param {object} userData - Datos a actualizar { nombre_usuario, rol, activo }.
+   * @param {object} userData - Datos a actualizar.
    * @returns {Promise<boolean>} True si se actualizó, false en caso contrario.
    */
   static async update(id, userData) {
-    const { nombre_usuario, rol, activo } = userData;
-    // Nota: La actualización de contraseña se manejaría por separado.
-    const [result] = await dbPool.execute(
-      'UPDATE usuarios SET nombre_usuario = ?, rol = ?, activo = ? WHERE id = ?',
-      [nombre_usuario, rol, activo, id]
-    );
+    // Construimos dinámicamente la query para actualizar solo los campos provistos
+    const fields = [];
+    const values = [];
+
+    // Campos permitidos para actualización (excluyendo id, password, created_at, updated_at)
+    // Password updates should be handled by a separate, dedicated function if needed.
+    const allowedFields = ['nombre_usuario', 'nombre', 'apellido', 'fecha_nacimiento', 'url_imagen', 'rol', 'activo'];
+
+    for (const key in userData) {
+      if (userData[key] !== undefined && allowedFields.includes(key)) {
+        fields.push(`${key} = ?`);
+        values.push(userData[key]);
+      }
+    }
+
+    if (fields.length === 0) {
+      return false; // No fields to update
+    }
+
+    values.push(id); // for WHERE id = ?
+
+    const sql = `UPDATE usuarios SET ${fields.join(', ')} WHERE id = ?`;
+
+    const [result] = await dbPool.execute(sql, values);
     return result.affectedRows > 0;
   }
 

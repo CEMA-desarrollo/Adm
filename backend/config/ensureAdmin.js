@@ -21,11 +21,15 @@ async function ensureAdminUser() {
 
       await User.create({
         nombre_usuario: adminUsername,
-        hash_contrasena: adminPassword, // Se guarda la contraseña en texto plano
+        nombre: 'Admin', // Default nombre
+        apellido: 'User', // Default apellido
+        fecha_nacimiento: null, // Default
+        url_imagen: null, // Default
+        password: adminPassword, // Changed from hash_contrasena
         rol: 'admin'
       });
 
-      console.log(`[ADMIN_SETUP] Usuario "${adminUsername}" creado con éxito.`);
+      console.log(`[ADMIN_SETUP] Usuario "${adminUsername}" creado con éxito con nombre y apellido por defecto.`);
       console.warn(`[SECURITY_WARNING] La contraseña del administrador ("${adminPassword}") se ha guardado en texto plano.`);
     } else {
       console.log(`[ADMIN_SETUP] El usuario "${adminUsername}" ya existe. No se realizaron cambios.`);
