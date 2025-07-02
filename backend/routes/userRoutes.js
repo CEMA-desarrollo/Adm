@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
-const { isAuthenticated, isAdmin } = require('../middleware/authMiddleware');
+// Using authorizeRole directly for clarity, isAdmin could be deprecated
+const { isAuthenticated, authorizeRole } = require('../middleware/authMiddleware');
 
 // =================================================================
 // Rutas de Autenticación (Públicas o semi-públicas)
@@ -13,11 +14,11 @@ router.post('/logout', isAuthenticated, userController.logout); // Logout tambi�
 router.get('/profile', isAuthenticated, userController.getProfile);
 
 // =================================================================
-// Rutas de Gestión de Usuarios (Protegidas y solo para Admin)
+// Rutas de Gestión de Usuarios (Protegidas y solo para Administrador)
 // =================================================================
-router.get('/', isAuthenticated, isAdmin, userController.getAllUsers);
-router.post('/', isAuthenticated, isAdmin, userController.createUser);
-router.put('/:id', isAuthenticated, isAdmin, userController.updateUser);
-router.delete('/:id', isAuthenticated, isAdmin, userController.deleteUser);
+router.get('/', isAuthenticated, authorizeRole(['Administrador']), userController.getAllUsers);
+router.post('/', isAuthenticated, authorizeRole(['Administrador']), userController.createUser);
+router.put('/:id', isAuthenticated, authorizeRole(['Administrador']), userController.updateUser);
+router.delete('/:id', isAuthenticated, authorizeRole(['Administrador']), userController.deleteUser);
 
 module.exports = router;

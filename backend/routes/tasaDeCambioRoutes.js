@@ -5,6 +5,6 @@ const { isAuthenticated, authorizeRole } = require('../middleware/authMiddleware
 
 router.get('/latest', isAuthenticated, tasaDeCambioController.getLatestTasa);
 router.get('/', isAuthenticated, tasaDeCambioController.getAllTasas);
-router.post('/', isAuthenticated, authorizeRole(['admin']), tasaDeCambioController.createTasa);
+router.post('/', isAuthenticated, authorizeRole(['Administrador']), tasaDeCambioController.createTasa);
 
 module.exports = router;

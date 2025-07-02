@@ -87,6 +87,12 @@ async function createUser(req, res) {
         return res.status(400).json({ message: 'Nombre de usuario, contraseña, rol, nombre y apellido son requeridos.' });
     }
 
+    // Validate the 'rol' field against the new allowed roles
+    const allowedRoles = ['Administrador', 'Encargado', 'Recepción', 'Propietario'];
+    if (!allowedRoles.includes(rol)) {
+        return res.status(400).json({ message: `Rol inválido. Los roles permitidos son: ${allowedRoles.join(', ')}.` });
+    }
+
     const createData = {
         nombre_usuario,
         password: password, // Changed from hash_contrasena
@@ -146,6 +152,13 @@ async function updateUser(req, res) {
     if (updateData.nombre === '') return res.status(400).json({ message: 'El nombre no puede ser vacío.' });
     if (updateData.apellido === '') return res.status(400).json({ message: 'El apellido no puede ser vacío.' });
 
+    // Validate the 'rol' field if it's being updated
+    if (updateData.rol) {
+        const allowedRoles = ['Administrador', 'Encargado', 'Recepción', 'Propietario'];
+        if (!allowedRoles.includes(updateData.rol)) {
+            return res.status(400).json({ message: `Rol inválido. Los roles permitidos son: ${allowedRoles.join(', ')}.` });
+        }
+    }
 
     // Obtener el estado actual para la bitácora
     const valor_anterior = await User.findById(id);

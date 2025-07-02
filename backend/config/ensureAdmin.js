@@ -26,10 +26,10 @@ async function ensureAdminUser() {
         fecha_nacimiento: null, // Default
         url_imagen: null, // Default
         password: adminPassword, // Changed from hash_contrasena
-        rol: 'admin'
+        rol: 'Administrador' // Changed from 'admin'
       });
 
-      console.log(`[ADMIN_SETUP] Usuario "${adminUsername}" creado con éxito con nombre y apellido por defecto.`);
+      console.log(`[ADMIN_SETUP] Usuario "${adminUsername}" creado con éxito con nombre y apellido por defecto y rol 'Administrador'.`);
       console.warn(`[SECURITY_WARNING] La contraseña del administrador ("${adminPassword}") se ha guardado en texto plano.`);
     } else {
       console.log(`[ADMIN_SETUP] El usuario "${adminUsername}" ya existe. No se realizaron cambios.`);
