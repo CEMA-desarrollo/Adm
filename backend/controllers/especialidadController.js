@@ -102,34 +102,49 @@ const deleteEspecialidad = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const estadoAnterior = await Especialidad.findById(id);
-    if (!estadoAnterior) {
-      return res.status(404).json({ message: 'Especialidad no encontrada para eliminar.' });
-    }
-
-    // Borrado lógico, consistente con otros controladores
-    const affectedRows = await Especialidad.update(id, { activo: false });
-    if (affectedRows === 0) {
+    const especialidadActual = await Especialidad.findById(id); // Renombrado para claridad
+    if (!especialidadActual) {
       return res.status(404).json({ message: 'Especialidad no encontrada.' });
     }
 
+    // Si la especialidad ya está inactiva, no hay nada que hacer.
+    // Se considera la operación exitosa ya que el estado deseado (inactivo) se cumple.
+    if (especialidadActual.activo === false) {
+      console.log(`[INFO] Intento de eliminar especialidad ID ${id} que ya estaba inactiva.`);
+      return res.status(204).send();
+    }
+
+    // Intentar la desactivación usando el método correcto del modelo
+    const affectedRows = await Especialidad.delete(id);
+
+    // Si affectedRows es 0 aquí, a pesar de que la encontramos activa, es un error inesperado.
+    // (Ej: modificación concurrente, o un problema en la BD que no lanzó excepción)
+    if (affectedRows === 0) {
+      console.warn(`[WARN] Especialidad ID ${id} se encontró activa pero no se pudo desactivar (affectedRows = 0).`);
+      // Devolver un error genérico porque es una situación anómala.
+      return res.status(500).json({ message: 'La especialidad fue encontrada pero no pudo ser desactivada. Intente nuevamente.' });
+    }
+
+    // Si llegamos aquí, la especialidad fue encontrada activa y desactivada con éxito (affectedRows > 0)
     // --- Registro en Bitácora ---
     await Bitacora.create({
-      usuario_id: req.session.user?.id || null,
-      accion: 'ELIMINACIÓN',
+      usuario_id: req.session.user?.id || null, // Asumiendo que req.session.user puede no existir si se relaja la autenticación
+      accion: 'DESACTIVACIÓN', // Más preciso que 'ELIMINACIÓN' para un borrado lógico
       tabla_afectada: 'especialidades',
       registro_id_afectado: id,
-      detalles: { valor_eliminado: estadoAnterior }
+      // Guardamos el estado ANTES de la desactivación como 'valor_eliminado' o 'valor_anterior'
+      detalles: { valor_anterior: especialidadActual }
     });
     // --- Fin Registro en Bitácora ---
 
-    res.status(204).send();
+    res.status(204).send(); // Éxito, sin contenido
+
   } catch (error) {
-    console.error(`Error al eliminar especialidad ${req.params.id}:`, error);
+    console.error(`Error al desactivar especialidad ${req.params.id}:`, error);
     if (error.code === 'ER_ROW_IS_REFERENCED_2') {
-      return res.status(409).json({ message: 'No se puede eliminar la especialidad porque está asociada a servicios existentes.' });
+      return res.status(409).json({ message: 'No se puede desactivar la especialidad porque está asociada a otros registros activos (ej. servicios). Primero debe desasociarla.' });
     }
-    res.status(500).json({ message: 'Error interno del servidor.' });
+    res.status(500).json({ message: 'Error interno del servidor al intentar desactivar la especialidad.' });
   }
 };
 
