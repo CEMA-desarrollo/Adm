@@ -263,5 +263,136 @@ module.exports = {
   createUser,
   updateUser,
   deleteUser,
-  getProfile, // <-- ¡AÑADIR ESTA LÍNEA ES CRUCIAL!
+  getProfile,
+  // Nueva función para actualizar el perfil del usuario
+  async updateProfile(req, res) {
+    try {
+      const userId = req.session.user.id; // ID del usuario autenticado
+      const { nombre, apellido, fecha_nacimiento } = req.body;
+
+      // 1. Validar campos obligatorios
+      if (!nombre || !apellido) {
+        // Si hay un archivo subido y hay error de validación, eliminar el archivo temporal.
+        if (req.file) {
+          const fs = require('fs').promises;
+          await fs.unlink(req.file.path).catch(err => console.error("Error al eliminar archivo temporal tras validación fallida:", err));
+        }
+        return res.status(400).json({ message: 'Los campos nombre y apellido son obligatorios.' });
+      }
+
+      const updateData = {
+        nombre,
+        apellido,
+      };
+
+      if (fecha_nacimiento) {
+        // Validar formato YYYY-MM-DD (simple validación, se puede mejorar con librerías)
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha_nacimiento)) {
+          if (req.file) {
+            const fs = require('fs').promises;
+            await fs.unlink(req.file.path).catch(err => console.error("Error al eliminar archivo temporal tras validación de fecha fallida:", err));
+          }
+          return res.status(400).json({ message: 'El formato de fecha_nacimiento debe ser YYYY-MM-DD.' });
+        }
+        updateData.fecha_nacimiento = fecha_nacimiento;
+      } else {
+        // Si se envía vacío, permitir establecerlo a null si la BD lo permite
+        updateData.fecha_nacimiento = null;
+      }
+
+      let oldAvatarPath = null; // Para guardar la ruta del avatar anterior si se va a eliminar
+
+      // 2. Procesar archivo de avatar (si existe)
+      if (req.file) {
+        const fs = require('fs').promises;
+        const path = require('path');
+
+        // Obtener el usuario actual para saber si tiene un avatar anterior
+        const currentUser = await User.findById(userId);
+        if (currentUser && currentUser.url_imagen) {
+            // Construir la ruta completa en el sistema de archivos del avatar anterior
+            // Asumiendo que url_imagen guarda algo como /public/uploads/avatars/user-1-timestamp.jpg
+            // y que el servidor está sirviendo 'public' desde 'backend/public'
+            oldAvatarPath = path.join(__dirname, '..', currentUser.url_imagen);
+        }
+
+        const timestamp = Date.now();
+        const extension = path.extname(req.file.originalname);
+        const newFilename = `user-${userId}-${timestamp}${extension}`;
+        const newFilePath = path.join(path.dirname(req.file.path), newFilename);
+
+        try {
+          await fs.rename(req.file.path, newFilePath);
+          updateData.url_imagen = `/public/uploads/avatars/${newFilename}`; // URL pública
+        } catch (renameError) {
+          console.error('Error al renombrar el archivo avatar:', renameError);
+          // No eliminamos el archivo temporal aquí, ya que el error es al renombrar.
+          // Podría ser un problema de permisos o similar.
+          return res.status(500).json({ message: 'Error al procesar la imagen de perfil.' });
+        }
+      }
+
+      // 3. Actualizar base de datos
+      const updated = await User.update(userId, updateData);
+
+      if (!updated) {
+        // Si hay un archivo nuevo y la actualización falla, eliminar el archivo nuevo (ya renombrado).
+        if (req.file && updateData.url_imagen) {
+            const fs = require('fs').promises;
+            const path = require('path');
+            const newAvatarPath = path.join(__dirname, '..', updateData.url_imagen);
+            await fs.unlink(newAvatarPath).catch(err => console.error("Error al eliminar nuevo avatar tras fallo de actualización de BD:", err));
+        }
+        return res.status(500).json({ message: 'No se pudo actualizar el perfil.' });
+      }
+
+      // 4. Si se subió un nuevo avatar y había uno antiguo, eliminar el antiguo.
+      if (oldAvatarPath && updateData.url_imagen && oldAvatarPath !== path.join(__dirname, '..', updateData.url_imagen)) {
+          const fs = require('fs').promises;
+          console.log(`[INFO] Eliminando avatar antiguo: ${oldAvatarPath}`);
+          await fs.unlink(oldAvatarPath).catch(err => {
+              // Loggear el error pero no hacer que la solicitud falle por esto,
+              // ya que el perfil ya se actualizó.
+              console.error("Error al eliminar el avatar antiguo:", err);
+          });
+      }
+
+      // 5. Obtener datos actualizados del usuario
+      const usuarioActualizado = await User.findById(userId);
+
+      // Actualizar la sesión del usuario con los nuevos datos
+      // (excluyendo la contraseña, findById ya lo hace)
+      req.session.user = usuarioActualizado;
+
+      // 6. Enviar Respuesta
+      res.json({
+        message: 'Perfil actualizado con éxito',
+        user: usuarioActualizado,
+      });
+
+    } catch (error) {
+      console.error('Error al actualizar el perfil:', error);
+      // Si hay un archivo subido y ocurre un error no manejado, intentar eliminarlo.
+      if (req.file) {
+        const fs = require('fs').promises;
+        // req.file.path sería el nombre temporal si no se renombró,
+        // o el nuevo nombre si el error ocurrió después del renombramiento.
+        // Es difícil saberlo con certeza aquí sin más contexto del error.
+        // Por seguridad, intentamos eliminar req.file.path (ruta original de multer).
+        await fs.unlink(req.file.path).catch(err => console.error("Error al eliminar archivo temporal en catch general:", err));
+      }
+      // Manejo de errores de Multer (ej. archivo muy grande, tipo de archivo incorrecto)
+      if (error instanceof require('multer').MulterError) {
+        if (error.code === 'LIMIT_FILE_SIZE') {
+            return res.status(400).json({ message: 'El archivo es demasiado grande. Máximo 5MB.' });
+        }
+        if (error.code === 'LIMIT_UNEXPECTED_FILE') {
+             // Este mensaje viene de nuestro filtro personalizado
+            return res.status(400).json({ message: error.message || 'Tipo de archivo no permitido.' });
+        }
+        return res.status(400).json({ message: `Error al subir archivo: ${error.message}` });
+      }
+      res.status(500).json({ message: 'Error interno del servidor al actualizar el perfil.' });
+    }
+  }
 };
