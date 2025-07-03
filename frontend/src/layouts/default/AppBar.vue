@@ -1,11 +1,20 @@
 <template>
   <v-navigation-drawer expand-on-hover rail>
     <v-list>
+      <!-- Hacemos que el bloque de perfil sea un enlace a la página de perfil -->
       <v-list-item
-        :prepend-avatar="userAvatar"
         :title="userFullName"
         :subtitle="userRole"
-      ></v-list-item>
+        :to="{ name: 'Profile' }"
+        link
+      >
+        <template v-slot:prepend>
+          <v-avatar color="grey-darken-1">
+            <v-img v-if="userAvatarUrl" :src="userAvatarUrl" :alt="userFullName"></v-img>
+            <v-icon v-else color="white">mdi-account</v-icon>
+          </v-avatar>
+        </template>
+      </v-list-item>
     </v-list>
 
     <v-divider></v-divider>
@@ -46,18 +55,18 @@ const userRole = computed(() => user.value?.rol || 'Invitado');
 const userFullName = computed(() => user.value ? `${user.value.nombre} ${user.value.apellido}` : 'Usuario');
 
 // Lógica de avatar mejorada
-const userAvatar = computed(() => {
+const userAvatarUrl = computed(() => {
   // 1. Si el usuario tiene una imagen personalizada, la usamos.
   if (user.value?.url_imagen) {
     return user.value.url_imagen;
   }
-  // 2. Si no, generamos una con las iniciales del nombre usando el servicio correcto.
+  // 2. Si no, generamos una con el nombre de usuario.
   if (user.value?.nombre) {
     const fullName = `${user.value.nombre} ${user.value.apellido || ''}`.trim();
     return `https://avatar.iran.liara.run/username?username=${encodeURIComponent(fullName)}`;
   }
-  // 3. Como último recurso, mostramos un avatar público aleatorio.
-  return 'https://avatar.iran.liara.run/public';
+  // 3. Si no hay datos, no devolvemos URL para mostrar un ícono de fallback.
+  return null;
 });
 
 /**

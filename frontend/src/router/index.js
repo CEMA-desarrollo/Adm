@@ -6,9 +6,17 @@ const routes = [
   {
     path: '/', // La ruta raíz ahora usa el layout
     component: () => import('@/layouts/default/Default.vue'), // El componente principal es el layout
-    // Los hijos se generan dinámicamente desde nuestro archivo de navegación.
-    // Esto asegura que las rutas y los enlaces del menú estén siempre sincronizados.
-    children: navigationItems,
+    children: [
+      // Las rutas del menú de navegación se importan y se esparcen aquí.
+      ...navigationItems,
+      // Añadimos rutas adicionales que usan el mismo layout pero no están en el menú.
+      {
+        path: 'profile',
+        name: 'Profile',
+        component: () => import('@/views/Profile.vue'),
+        meta: { requiresAuth: true } // Solo usuarios autenticados pueden ver su perfil
+      }
+    ],
   },
   {
     path: '/login',
