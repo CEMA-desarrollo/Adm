@@ -58,7 +58,8 @@ const userFullName = computed(() => user.value ? `${user.value.nombre} ${user.va
 const userAvatarUrl = computed(() => {
   // 1. Si el usuario tiene una imagen personalizada, la usamos.
   if (user.value?.url_imagen) {
-    return user.value.url_imagen;
+    // La URL del backend es relativa, construimos la URL completa.
+    return `${import.meta.env.VITE_API_BASE_URL}${user.value.url_imagen}`;
   }
   // 2. Si no, generamos una con el nombre de usuario.
   if (user.value?.nombre) {

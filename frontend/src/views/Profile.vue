@@ -1,5 +1,10 @@
 <template>
   <v-container>
+    <!-- Notificación Snackbar -->
+    <v-snackbar v-model="snackbar.show" :color="snackbar.color" timeout="3000" location="bottom end">
+      {{ snackbar.text }}
+    </v-snackbar>
+
     <v-card class="mx-auto" style="min-width: 450px; max-width: 800px;">
       <v-card-title class="headline">
         Editar Perfil
@@ -23,6 +28,7 @@
               prepend-icon="mdi-camera"
               accept="image/*"
               @change="onFileChange"
+              :loading="loadingSave"
             ></v-file-input>
           </v-col>
 
@@ -80,7 +86,7 @@
 
       <v-card-actions>
         <v-spacer></v-spacer>
-        <v-btn color="primary" variant="elevated" @click="handleSave">
+        <v-btn color="primary" variant="elevated" @click="handleSave" :loading="loadingSave">
           Guardar Cambios
         </v-btn>
       </v-card-actions>
@@ -95,6 +101,7 @@ import authService from '@/services/authService';
 const dateMenu = ref(false);
 const selectedFile = ref(null); // Para almacenar el objeto del archivo seleccionado
 const loadingSave = ref(false); // Para mostrar un estado de carga en el botón
+const snackbar = ref({ show: false, text: '', color: 'success' });
 
 // Estado reactivo para el formulario
 const form = ref({
@@ -161,6 +168,10 @@ const onFileChange = (files) => {
   }
 };
 
+const showSnackbar = (text, color = 'success') => {
+  snackbar.value = { show: true, text, color };
+};
+
 const handleSave = async () => {
   loadingSave.value = true;
   const formData = new FormData();
@@ -184,10 +195,11 @@ const handleSave = async () => {
 
   try {
     const response = await authService.updateProfile(formData);
-    console.log(response.message); // "Perfil actualizado con éxito"
+    showSnackbar(response.message || 'Perfil actualizado con éxito');
     selectedFile.value = null; // Limpiamos el archivo seleccionado
   } catch (error) {
-    console.error('Error al actualizar el perfil:', error);
+    const errorMessage = error.response?.data?.message || 'Error al actualizar el perfil.';
+    showSnackbar(errorMessage, 'error');
   } finally {
     loadingSave.value = false;
   }
