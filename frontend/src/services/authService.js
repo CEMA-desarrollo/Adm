@@ -1,8 +1,8 @@
-import apiClient from './api'; // <-- 1. Importamos el apiClient centralizado.
-import { ref } from 'vue';
+import apiClient from './api'; // Importamos el apiClient con withCredentials: true
+import { ref, readonly } from 'vue';
 
-// 2. El estado del usuario se inicializa como nulo. Ya no dependemos de localStorage.
-const user = ref(null);
+// El estado del usuario es reactivo y se inicializa como nulo.
+const _user = ref(null);
 
 // Esta promesa evita que se verifique la sesión múltiples veces durante la carga inicial.
 let authPromise = null;
@@ -16,9 +16,9 @@ async function login(credentials) {
   const response = await apiClient.post('/users/login', credentials);
 
   // Guardamos el usuario en nuestro estado reactivo
-  user.value = response.data.user;
+  _user.value = response.data.user;
 
-  return user.value;
+  return _user.value;
 }
 
 /**
@@ -32,7 +32,7 @@ async function logout() {
     console.error("Error en el logout del backend, limpiando sesión local de todas formas.", error);
   } finally {
     // Limpiamos el estado local para que el frontend "olvide" al usuario.
-    user.value = null;
+    _user.value = null;
   }
 }
 
@@ -41,7 +41,7 @@ async function logout() {
  */
 function isAuthenticated() {
   // La única fuente de verdad es si el objeto 'user' existe en memoria.
-  return !!user.value;
+  return !!_user.value;
 }
 
 /**
@@ -52,10 +52,10 @@ async function checkAuthStatus() {
     // Esta llamada solo tendrá éxito si el navegador tiene una cookie de sesión válida.
     const response = await apiClient.get('/users/profile');
     // La respuesta del perfil anida el usuario, lo asignamos correctamente.
-    user.value = response.data.user;
+    _user.value = response.data.user;
   } catch (error) {
     // Si la llamada falla (ej. error 401), significa que no hay sesión.
-    user.value = null;
+    _user.value = null;
   }
 }
 
@@ -69,23 +69,11 @@ function initializeAuth() {
   return authPromise;
 }
 
-/**
- * Actualiza el perfil del usuario enviando los datos como JSON.
- * @param {object} profileData - Los datos del perfil (nombre, apellido, etc.).
- */
-async function updateProfile(profileData) {
-  // La cabecera 'Content-Type': 'application/json' es la predeterminada para apiClient.
-  const response = await apiClient.put('/users/profile', profileData);
-  user.value = response.data.user; // Actualizamos el usuario local con la respuesta.
-  return response.data;
-}
-
-// Exportamos las funciones y el estado para que otros componentes los usen
+// Exportamos las funciones y el estado (como solo lectura) para que otros componentes los usen
 export default {
-  user,
+  user: readonly(_user),
   login,
   logout,
   isAuthenticated,
   initializeAuth,
-  updateProfile, // <-- Exportamos la nueva función para actualizar el perfil.
 };
