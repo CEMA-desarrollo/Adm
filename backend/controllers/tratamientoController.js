@@ -8,8 +8,23 @@
 
  const getAllTratamientos = async (req, res) => {
    try {
-     const tratamientos = await Tratamiento.findAll();
-     res.json(tratamientos);
+     // Validar y parsear page y limit, asegurando que sean números positivos.
+     let page = parseInt(req.query.page, 10);
+     let limit = parseInt(req.query.limit, 10);
+
+     if (isNaN(page) || page < 1) {
+       page = 1; // Default a la primera página si es inválido o no se proporciona
+     }
+     if (isNaN(limit) || limit < 1) {
+       limit = 20; // Default a 20 items por página si es inválido o no se proporciona
+     }
+     // Opcional: imponer un límite máximo para 'limit'
+     // if (limit > 100) {
+     //   limit = 100; // Max 100 items per page
+     // }
+
+     const paginatedResult = await Tratamiento.findAll(page, limit);
+     res.json(paginatedResult);
    } catch (error) {
      console.error('Error al obtener tratamientos:', error);
      res.status(500).json({ message: 'Error interno del servidor.' });
