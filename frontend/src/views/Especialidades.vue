@@ -86,11 +86,12 @@
         <!-- Diálogo para Desactivar Especialidad -->
         <v-dialog v-model="dialogDelete" max-width="500px">
           <v-card>
-            <v-card-title class="text-h5">¿Estás seguro de que deseas desactivar esta especialidad?</v-card-title>
+            <v-card-title class="text-h5">¿Eliminar Especialidad?</v-card-title>
+            <v-card-text>¿Estás seguro de que deseas **eliminar permanentemente** esta especialidad? Esta acción no se puede deshacer. La eliminación fallará si la especialidad está en uso.</v-card-text>
             <v-card-actions>
               <v-spacer></v-spacer>
               <v-btn color="blue-darken-1" variant="text" @click="closeDelete">Cancelar</v-btn>
-              <v-btn color="blue-darken-1" variant="text" @click="deleteItemConfirm">OK</v-btn>
+              <v-btn color="red-darken-1" variant="text" @click="deleteItemConfirm">Eliminar</v-btn>
               <v-spacer></v-spacer>
             </v-card-actions>
           </v-card>
@@ -200,14 +201,16 @@ function deleteItem(item) {
 
 async function deleteItemConfirm() {
   try {
-    // BUG: Se estaba llamando a update() (PUT) en lugar de delete() (DELETE).
-    // CORRECCIÓN: Llamar al servicio de borrado (soft delete) que envía una petición DELETE.
+    // Se asume que el servicio ahora intenta un borrado permanente en el backend.
     await especialidadService.delete(editedItem.value.id);
-    especialidades.value[editedIndex.value].activo = false; // Actualizar el estado en la tabla local
-    showSnackbar('La especialidad ha sido desactivada correctamente.', 'success');
+    showSnackbar('La especialidad ha sido eliminada correctamente.', 'success');
+    // Recargamos los datos para reflejar la eliminación en la tabla.
+    await loadEspecialidades();
   } catch (error) {
     console.error("Error al desactivar especialidad:", error);
-    showSnackbar(`No se pudo desactivar la especialidad. ${error.response?.data?.message || ''}`, 'error');
+    // Mensaje de error personalizado si la API indica que el recurso está en uso.
+    const message = error.response?.status === 409 ? 'No se puede eliminar: la especialidad está en uso.' : `No se pudo eliminar la especialidad. ${error.response?.data?.message || ''}`;
+    showSnackbar(message, 'error');
   }
   closeDelete();
 }
@@ -236,16 +239,14 @@ async function save() {
   
   try {
     if (editedIndex.value > -1) {
-      // Actualizar
-      const updatedEspecialidad = await especialidadService.update(editedItem.value.id, editedItem.value);
-      Object.assign(especialidades.value[editedIndex.value], { ...editedItem.value, ...updatedEspecialidad });
+      await especialidadService.update(editedItem.value.id, editedItem.value);
       showSnackbar('Especialidad actualizada con éxito.');
     } else {
-      // Crear
-      const nuevaEspecialidad = await especialidadService.create(editedItem.value);
-      especialidades.value.push(nuevaEspecialidad);
+      await especialidadService.create(editedItem.value);
       showSnackbar('Especialidad creada con éxito.');
     }
+    // Después de guardar (crear o actualizar), recargamos la lista para mantener la consistencia.
+    await loadEspecialidades();
   } catch (error) {
     console.error("Error al guardar la especialidad:", error);
     showSnackbar(`No se pudo guardar la especialidad. ${error.response?.data?.message || ''}`, 'error');
