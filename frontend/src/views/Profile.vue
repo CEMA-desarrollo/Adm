@@ -14,27 +14,8 @@
       </v-card-subtitle>
 
       <v-card-text>
-        <v-row align="center" class="mt-4">
-          <!-- Sección del Avatar -->
-          <v-col cols="12" md="4" class="text-center">
-            <v-avatar size="128" color="grey-darken-1">
-              <v-img v-if="userAvatarUrl" :src="userAvatarUrl" :alt="form.nombre"></v-img>
-              <v-icon v-else color="white" size="64">mdi-account</v-icon>
-            </v-avatar>
-            <v-file-input
-              label="Cambiar foto"
-              class="mt-4"
-              variant="underlined"
-              prepend-icon="mdi-camera"
-              accept="image/*"
-              @change="onFileChange"
-              :loading="loadingSave"
-            ></v-file-input>
-          </v-col>
-
-          <!-- Sección del Formulario -->
-          <v-col cols="12" md="8">
-            <v-form @submit.prevent="handleSave">
+        <div class="mt-4">
+          <v-form @submit.prevent="handleSave">
               <v-text-field
                 v-model="form.nombre"
                 label="Nombre"
@@ -80,8 +61,7 @@
                 disabled
               ></v-text-field>
             </v-form>
-          </v-col>
-        </v-row>
+        </div>
       </v-card-text>
 
       <v-card-actions>
@@ -99,7 +79,6 @@ import { ref, computed, onMounted } from 'vue';
 import authService from '@/services/authService';
 
 const dateMenu = ref(false);
-const selectedFile = ref(null); // Para almacenar el objeto del archivo seleccionado
 const loadingSave = ref(false); // Para mostrar un estado de carga en el botón
 const snackbar = ref({ show: false, text: '', color: 'success' });
 
@@ -109,23 +88,6 @@ const form = ref({
   apellido: '',
   fecha_nacimiento: null, // Usará un objeto Date
   rol: '',
-  url_imagen: null,
-});
-
-// Lógica del avatar, similar a la del AppBar
-const userAvatarUrl = computed(() => {
-  if (form.value.url_imagen) {
-    // Si la URL no es un blob local, le anteponemos la URL del backend
-    if (form.value.url_imagen.startsWith('/public')) {
-      return `${import.meta.env.VITE_API_BASE_URL}${form.value.url_imagen}`;
-    }
-    return form.value.url_imagen; // Es un blob local para previsualización
-  }
-  if (form.value.nombre) {
-    const fullName = `${form.value.nombre} ${form.value.apellido || ''}`.trim();
-    return `https://avatar.iran.liara.run/username?username=${encodeURIComponent(fullName)}`;
-  }
-  return null;
 });
 
 // Formatea la fecha para mostrarla en el campo de texto
@@ -155,18 +117,8 @@ onMounted(() => {
       form.value.fecha_nacimiento = new Date(parts[0], parts[1] - 1, parts[2]);
     }
     form.value.rol = user.rol || 'N/A';
-    form.value.url_imagen = user.url_imagen || null;
   }
 });
-
-const onFileChange = (files) => {
-  const file = files[0]; // v-file-input emite un array de archivos, no un objeto de evento.
-  if (file) {
-    selectedFile.value = file; // Almacenamos el objeto File
-    // Mostramos una previsualización local.
-    form.value.url_imagen = URL.createObjectURL(file);
-  }
-};
 
 const showSnackbar = (text, color = 'success') => {
   snackbar.value = { show: true, text, color };
@@ -174,31 +126,35 @@ const showSnackbar = (text, color = 'success') => {
 
 const handleSave = async () => {
   loadingSave.value = true;
-  const formData = new FormData();
 
-  // Añadimos los campos del formulario al FormData
-  formData.append('nombre', form.value.nombre);
-  formData.append('apellido', form.value.apellido);
+  const profileData = {
+    nombre: form.value.nombre,
+    apellido: form.value.apellido,
+    fecha_nacimiento: null,
+  };
 
   // Formateamos la fecha a 'YYYY-MM-DD' para el backend
   if (form.value.fecha_nacimiento) {
     const date = new Date(form.value.fecha_nacimiento);
     const userTimezoneOffset = date.getTimezoneOffset() * 60000;
     const adjustedDate = new Date(date.getTime() - userTimezoneOffset);
-    formData.append('fecha_nacimiento', adjustedDate.toISOString().split('T')[0]);
-  }
-
-  // Si se seleccionó un nuevo archivo, lo añadimos
-  if (selectedFile.value) {
-    formData.append('avatar', selectedFile.value);
+    profileData.fecha_nacimiento = adjustedDate.toISOString().split('T')[0];
   }
 
   try {
-    const response = await authService.updateProfile(formData);
+    const response = await authService.updateProfile(profileData);
     showSnackbar(response.message || 'Perfil actualizado con éxito');
-    selectedFile.value = null; // Limpiamos el archivo seleccionado
   } catch (error) {
-    const errorMessage = error.response?.data?.message || 'Error al actualizar el perfil.';
+    // Manejo de errores mejorado para dar más detalles
+    console.error("Error detallado al guardar perfil:", error);
+    let errorMessage = 'Error al actualizar el perfil.';
+    if (error.response) {
+      // El servidor respondió con un error (ej. 400, 404, 500)
+      errorMessage = error.response.data.message || `Error del servidor: ${error.response.status}`;
+    } else if (error.request) {
+      // La petición se hizo pero no se recibió respuesta (ej. problema de red, CORS)
+      errorMessage = 'No se pudo conectar con el servidor. Revisa tu conexión y la URL del API.';
+    }
     showSnackbar(errorMessage, 'error');
   } finally {
     loadingSave.value = false;

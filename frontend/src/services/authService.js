@@ -18,8 +18,6 @@ async function login(credentials) {
   // Guardamos el usuario en nuestro estado reactivo
   user.value = response.data.user;
 
-  // ELIMINADO: Ya no guardamos nada en localStorage.
-
   return user.value;
 }
 
@@ -35,7 +33,6 @@ async function logout() {
   } finally {
     // Limpiamos el estado local para que el frontend "olvide" al usuario.
     user.value = null;
-    // ELIMINADO: Ya no hay nada que limpiar en localStorage.
   }
 }
 
@@ -49,13 +46,13 @@ function isAuthenticated() {
 
 /**
  * Verifica si hay una sesión activa en el servidor llamando a un endpoint protegido.
- * Este es el reemplazo de leer desde localStorage al iniciar la app.
  */
 async function checkAuthStatus() {
   try {
     // Esta llamada solo tendrá éxito si el navegador tiene una cookie de sesión válida.
     const response = await apiClient.get('/users/profile');
-    user.value = response.data; // Si hay sesión, poblamos el estado del usuario.
+    // La respuesta del perfil anida el usuario, lo asignamos correctamente.
+    user.value = response.data.user;
   } catch (error) {
     // Si la llamada falla (ej. error 401), significa que no hay sesión.
     user.value = null;
@@ -64,7 +61,6 @@ async function checkAuthStatus() {
 
 /**
  * Inicializa la autenticación, asegurando que checkAuthStatus se llame solo una vez.
- * El router llamará a esta función antes de cada navegación.
  */
 function initializeAuth() {
   if (!authPromise) {
@@ -73,11 +69,23 @@ function initializeAuth() {
   return authPromise;
 }
 
+/**
+ * Actualiza el perfil del usuario enviando los datos como JSON.
+ * @param {object} profileData - Los datos del perfil (nombre, apellido, etc.).
+ */
+async function updateProfile(profileData) {
+  // La cabecera 'Content-Type': 'application/json' es la predeterminada para apiClient.
+  const response = await apiClient.put('/users/profile', profileData);
+  user.value = response.data.user; // Actualizamos el usuario local con la respuesta.
+  return response.data;
+}
+
 // Exportamos las funciones y el estado para que otros componentes los usen
 export default {
   user,
   login,
   logout,
   isAuthenticated,
-  initializeAuth, // <-- Exportamos la nueva función de inicialización.
+  initializeAuth,
+  updateProfile, // <-- Exportamos la nueva función para actualizar el perfil.
 };

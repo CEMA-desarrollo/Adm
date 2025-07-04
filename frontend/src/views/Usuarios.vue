@@ -66,7 +66,26 @@
           <v-container>
             <v-form ref="form" @submit.prevent="save">
               <v-row>
-                <!-- Nuevos campos: Nombre y Apellido -->
+                <!-- 1. Nombre de Usuario -->
+                <v-col cols="12">
+                  <v-text-field
+                    v-model="editedItem.nombre_usuario"
+                    label="Nombre de Usuario"
+                    :rules="[rules.required]"
+                  ></v-text-field>
+                </v-col>
+
+                <!-- 2. Contraseña (solo para nuevos usuarios) -->
+                <v-col cols="12" v-if="!editedItem.id">
+                  <v-text-field
+                    v-model="editedItem.password"
+                    label="Contraseña"
+                    type="password"
+                    :rules="[rules.required]"
+                  ></v-text-field>
+                </v-col>
+
+                <!-- 3. Nombre y 4. Apellido -->
                 <v-col cols="12" sm="6">
                   <v-text-field
                     v-model="editedItem.nombre"
@@ -81,21 +100,8 @@
                     :rules="[rules.required]"
                   ></v-text-field>
                 </v-col>
-                <v-col cols="12">
-                  <v-text-field
-                    v-model="editedItem.nombre_usuario"
-                    label="Nombre de Usuario"
-                    :rules="[rules.required]"
-                  ></v-text-field>
-                </v-col>
-                <v-col cols="12">
-                  <v-text-field
-                    v-model="editedItem.url_imagen"
-                    label="URL de la Foto de Perfil"
-                    prepend-icon="mdi-image"
-                  ></v-text-field>
-                </v-col>
-                <!-- Nuevo campo: Fecha de Nacimiento con Date Picker -->
+
+                <!-- 5. Fecha de Nacimiento -->
                 <v-col cols="12">
                   <v-menu
                     v-model="dateMenu"
@@ -122,14 +128,8 @@
                     ></v-date-picker>
                   </v-menu>
                 </v-col>
-                <v-col cols="12" v-if="!editedItem.id">
-                  <v-text-field
-                    v-model="editedItem.password"
-                    label="Contraseña"
-                    type="password"
-                    :rules="[rules.required]"
-                  ></v-text-field>
-                </v-col>
+
+                <!-- 6. Rol y 7. Activo -->
                 <v-col cols="12" sm="6">
                   <v-select
                     v-model="editedItem.rol"
@@ -138,7 +138,7 @@
                     :rules="[rules.required]"
                   ></v-select>
                 </v-col>
-                <v-col cols="12" sm="6" v-if="editedItem.id">
+                <v-col cols="12" sm="6">
                   <v-switch
                     v-model="editedItem.activo"
                     label="Activo"
@@ -193,7 +193,6 @@ const editedItem = ref({
   password: '',
   rol: 'Recepción', // Corregido para coincidir con las opciones del select
   activo: true,
-  url_imagen: '',
 });
 
 const defaultItem = {
@@ -205,7 +204,6 @@ const defaultItem = {
   password: '',
   rol: 'Recepción', // Corregido para coincidir con las opciones del select
   activo: true,
-  url_imagen: '',
 };
 
 const formTitle = computed(() => (editedItem.value.id ? 'Editar Usuario' : 'Nuevo Usuario'));
