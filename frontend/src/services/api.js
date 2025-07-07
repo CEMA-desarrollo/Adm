@@ -14,4 +14,6 @@ const apiClient = axios.create({
 // Opcional pero recomendado: Interceptor de Respuesta para manejar errores 401 globalmente
 // Si el token expira, esto deslogueará al usuario automáticamente.
 
+axios.defaults.withCredentials = true;
+
 export default apiClient;

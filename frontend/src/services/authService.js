@@ -16,6 +16,7 @@ async function login(credentials) {
   const response = await apiClient.post('/users/login', credentials);
 
   // Guardamos el usuario en nuestro estado reactivo
+  localStorage.setItem('user', JSON.stringify(response.data.user));
   _user.value = response.data.user;
 
   return _user.value;
@@ -32,6 +33,7 @@ async function logout() {
     console.error("Error en el logout del backend, limpiando sesión local de todas formas.", error);
   } finally {
     // Limpiamos el estado local para que el frontend "olvide" al usuario.
+    localStorage.removeItem('user');
     _user.value = null;
   }
 }
@@ -67,6 +69,11 @@ function initializeAuth() {
     authPromise = checkAuthStatus();
   }
   return authPromise;
+}
+
+const savedUser = localStorage.getItem('user');
+if (savedUser) {
+  _user.value = JSON.parse(savedUser);
 }
 
 // Exportamos las funciones y el estado (como solo lectura) para que otros componentes los usen
