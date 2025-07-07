@@ -3,14 +3,14 @@
     <v-list>
       <!-- Hacemos que el bloque de perfil sea un enlace a la página de perfil -->
       <v-list-item
-        :title="userFullName"
+        :title="userName"
         :subtitle="userRole"
         :to="{ name: 'Profile' }"
         link
       >
         <template v-slot:prepend>
           <v-avatar color="grey-darken-1">
-            <v-img v-if="userAvatarUrl" :src="userAvatarUrl" :alt="userFullName"></v-img>
+            <v-img v-if="userAvatarUrl" :src="userAvatarUrl" :alt="userName"></v-img>
             <v-icon v-else color="white">mdi-account</v-icon>
           </v-avatar>
         </template>
@@ -52,19 +52,15 @@ const router = useRouter();
 // Obtenemos el usuario y su rol del servicio de autenticación
 const user = authService.user;
 const userRole = computed(() => user.value?.rol || 'Invitado');
-const userFullName = computed(() => user.value ? `${user.value.nombre} ${user.value.apellido}` : 'Usuario');
+// Corregido para usar `nombre_usuario` que sí existe en el objeto de usuario.
+const userName = computed(() => user.value?.nombre_usuario || 'Usuario');
 
 // Lógica de avatar mejorada
 const userAvatarUrl = computed(() => {
-  // 1. Si el usuario tiene una imagen personalizada, la usamos.
-  if (user.value?.url_imagen) {
-    // La URL del backend es relativa, construimos la URL completa.
-    return `${import.meta.env.VITE_API_BASE_URL}${user.value.url_imagen}`;
-  }
-  // 2. Si no, generamos una con el nombre de usuario.
-  if (user.value?.nombre) {
-    const fullName = `${user.value.nombre} ${user.value.apellido || ''}`.trim();
-    return `https://avatar.iran.liara.run/username?username=${encodeURIComponent(fullName)}`;
+  // La tabla de usuarios no tiene url_imagen, nombre, o apellido.
+  // Usamos `nombre_usuario` para generar un avatar de fallback.
+  if (user.value?.nombre_usuario) {
+    return `https://avatar.iran.liara.run/username?username=${encodeURIComponent(user.value.nombre_usuario)}`;
   }
   // 3. Si no hay datos, no devolvemos URL para mostrar un ícono de fallback.
   return null;
@@ -77,11 +73,16 @@ const userAvatarUrl = computed(() => {
  * - Si un item tiene `meta.roles`, solo es visible si el rol del usuario está en esa lista.
  */
 const visibleNavItems = computed(() => {
+  // Si no hay usuario autenticado, no mostramos ningún item.
+  if (!user.value) return [];
+  
+  const currentUserRole = userRole.value.toLowerCase();
   return navigationItems.filter(item => {
-    if (!item.meta.roles || item.meta.roles.length === 0) {
+    if (!item.meta?.roles || item.meta.roles.length === 0) {
       return true; // Visible para todos si no se especifican roles
     }
-    return item.meta.roles.includes(userRole.value); // Visible solo si el rol coincide
+    // Hacemos la comprobación insensible a mayúsculas para que sea robusta.
+    return item.meta.roles.some(requiredRole => requiredRole.toLowerCase() === currentUserRole);
   });
 });
 

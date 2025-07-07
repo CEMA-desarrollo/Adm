@@ -29,10 +29,10 @@ router.put(
 // =================================================================
 // Rutas de Gestión de Usuarios (Protegidas y solo para Administrador)
 // =================================================================
-// Usar 'admin' para que coincida con la base de datos y el frontend
-router.get('/', isAuthenticated, authorizeRole(['admin']), userController.getAllUsers);
-router.post('/', isAuthenticated, authorizeRole(['admin']), userController.createUser);
-router.put('/:id', isAuthenticated, authorizeRole(['admin']), userController.updateUser); // Esta es para que un admin actualice CUALQUIER usuario
-router.delete('/:id', isAuthenticated, authorizeRole(['admin']), userController.deleteUser);
+
+router.get('/', isAuthenticated, authorizeRole(['Administrador']), userController.getAllUsers);
+router.post('/', isAuthenticated, authorizeRole(['Administrador']), userController.createUser);
+router.put('/:id', isAuthenticated, authorizeRole(['Administrador']), userController.updateUser); // Esta es para que un admin actualice CUALQUIER usuario
+router.delete('/:id', isAuthenticated, authorizeRole(['Administrador']), userController.deleteUser);
 
 module.exports = router;

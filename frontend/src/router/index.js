@@ -63,8 +63,13 @@ router.beforeEach((to, from, next) => {
     const user = authService.user.value;
     // Si la ruta requiere roles específicos y el usuario no los tiene,
     // lo redirigimos a la página de inicio.
-    if (requiredRoles && requiredRoles.length > 0 && !requiredRoles.includes(user?.rol)) {
-      return next({ name: 'Home' }); // O a una página de error 403 "No Autorizado"
+    if (requiredRoles && requiredRoles.length > 0) {
+      const userRole = user?.rol?.toLowerCase() || '';
+      const hasPermission = requiredRoles.some(role => role.toLowerCase() === userRole);
+
+      if (!hasPermission) {
+        return next({ name: 'Home' }); // O a una página de error 403 "No Autorizado"
+      }
     }
   }
 
