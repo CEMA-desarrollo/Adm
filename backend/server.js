@@ -46,7 +46,8 @@ app.use(session({
   store: new FileStore({
     path: './sessions', // Directorio donde se guardarán las sesiones
     ttl: 86400, // Tiempo de vida de la sesión en segundos (1 día)
-    retries: 0,
+    retries: 5, // Aumentar el número de reintentos
+    logFn: function(msg) { console.log('[SESSION_DEBUG]', msg); } // Añadir logging detallado
   }),
   secret: process.env.SESSION_SECRET || 'un_secreto_muy_seguro_y_largo',
   resave: false,
