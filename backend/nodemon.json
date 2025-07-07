@@ -6,7 +6,8 @@
     "*.test.js",
     "temp/",
     ".vite-cache/",
-    "coverage/"
+    "coverage/",
+    "sessions/"
   ],
   "ext": "js,json"
 }
