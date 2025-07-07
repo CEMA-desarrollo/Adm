@@ -10,6 +10,13 @@ const uploadAvatar = require('../middleware/multerConfig'); // Importar configur
 router.post('/login', userController.login);
 router.post('/logout', isAuthenticated, userController.logout);
 
+// Ruta para verificar la sesión activa. Esencial para la inicialización del frontend.
+router.get('/check-session', isAuthenticated, (req, res) => {
+  // Si la petición llega aquí, `isAuthenticated` ya validó la sesión.
+  // Devolvemos el usuario guardado en la sesión.
+  res.status(200).json({ user: req.session.user });
+});
+
 // Perfil de usuario
 router.get('/profile', isAuthenticated, userController.getProfile);
 router.put(
@@ -22,9 +29,10 @@ router.put(
 // =================================================================
 // Rutas de Gestión de Usuarios (Protegidas y solo para Administrador)
 // =================================================================
-router.get('/', isAuthenticated, authorizeRole(['Administrador']), userController.getAllUsers);
-router.post('/', isAuthenticated, authorizeRole(['Administrador']), userController.createUser);
-router.put('/:id', isAuthenticated, authorizeRole(['Administrador']), userController.updateUser); // Esta es para que un admin actualice CUALQUIER usuario
-router.delete('/:id', isAuthenticated, authorizeRole(['Administrador']), userController.deleteUser);
+// Usar 'admin' para que coincida con la base de datos y el frontend
+router.get('/', isAuthenticated, authorizeRole(['admin']), userController.getAllUsers);
+router.post('/', isAuthenticated, authorizeRole(['admin']), userController.createUser);
+router.put('/:id', isAuthenticated, authorizeRole(['admin']), userController.updateUser); // Esta es para que un admin actualice CUALQUIER usuario
+router.delete('/:id', isAuthenticated, authorizeRole(['admin']), userController.deleteUser);
 
 module.exports = router;

@@ -1,30 +1,35 @@
+// Middleware para verificar si el usuario está autenticado
 const isAuthenticated = (req, res, next) => {
-  if (req.session.user) {
+  // Asumimos que al hacer login, guardas los datos del usuario en req.session.user
+  if (req.session?.user) {
+    // Si hay un usuario en la sesión, la petición puede continuar.
     return next();
+  } else {
+    // Si no hay sesión, se devuelve un error 401 (No Autorizado).
+    // El interceptor de Axios en el frontend se encargará de esto.
+    return res.status(401).json({ message: 'No autenticado. Por favor, inicie sesión.' });
   }
-  // Si no hay sesión, se devuelve un error 401 (No autorizado)
-  res.status(401).json({ message: 'No autorizado. Por favor, inicie sesión.' });
 };
 
-const isAdmin = (req, res, next) => {
-  if (req.session.user && req.session.user.rol === 'Administrador') { // Changed 'admin' to 'Administrador'
-    return next();
-  }
-  // Si no es admin, se devuelve un error 403 (Prohibido)
-  res.status(403).json({ message: 'Acceso denegado. Se requiere rol de Administrador.' }); // Updated message
-};
-
-const authorizeRole = (roles) => {
+// Middleware para verificar roles de usuario
+const authorizeRole = (allowedRoles) => {
   return (req, res, next) => {
-    if (!req.session.user || !roles.includes(req.session.user.rol)) {
-      return res.status(403).json({ message: 'Acceso denegado. Su rol no tiene permisos para esta acción.' });
+    // Este middleware debe ejecutarse DESPUÉS de isAuthenticated,
+    // por lo que podemos asumir que req.session.user existe.
+    const { rol } = req.session.user;
+
+    // Hacemos la comparación insensible a mayúsculas para evitar errores
+    // entre 'admin' (DB) y 'Administrador' (código).
+    const userRole = rol.toLowerCase(); // ej: 'admin'
+    const isAllowed = allowedRoles.some(role => role.toLowerCase() === userRole);
+
+    if (isAllowed) {
+      return next(); // El usuario tiene el rol permitido, continuar.
+    } else {
+      // El usuario está autenticado pero no tiene permiso para este recurso.
+      return res.status(403).json({ message: 'Acceso prohibido. No tiene los permisos necesarios.' });
     }
-    next();
   };
 };
 
-module.exports = {
-  isAuthenticated,
-  isAdmin,
-  authorizeRole,
-};
+module.exports = { isAuthenticated, authorizeRole };

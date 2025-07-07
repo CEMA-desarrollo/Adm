@@ -39,44 +39,38 @@ const router = createRouter({
 
 // Global Navigation Guard
 // Se ejecuta antes de cada navegación de ruta
-router.beforeEach(async (to, from, next) => {
-  // 1. Antes de cualquier otra cosa, nos aseguramos de que el estado de autenticación
-  //    se haya verificado con el backend. Esto solo hará una llamada a la API
-  //    la primera vez que se cargue la página.
-  await authService.initializeAuth();
+router.beforeEach((to, from, next) => {
+  // La inicialización ahora se hace en main.js ANTES de que el router se active.
+  // Simplemente leemos el estado reactivo que ya fue establecido.
+  const isAuthenticated = authService.isAuthenticated.value;
 
-  const isAuthenticated = authService.isAuthenticated();
+  const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
+  const isGuestRoute = to.matched.some(record => record.meta.guest);
 
-  // Si la ruta requiere autenticación y el usuario no está autenticado, redirigir a login
-  if (to.matched.some(record => record.meta.requiresAuth)) {
-    if (!isAuthenticated) {
-      console.log('Redirigiendo a login: Ruta protegida y usuario no autenticado.');
-      next({ name: 'Login', query: { redirect: to.fullPath } }); // Redirige a login, guardando la ruta original en el query
-    } else {
-      // El usuario está autenticado, ahora verificamos los roles
-      const requiredRoles = to.meta.roles;
-      const user = authService.user.value; // Obtenemos el usuario reactivo
+  if (requiresAuth && !isAuthenticated) {
+    // Si la ruta requiere autenticación y no la hay, redirigir a login.
+    return next({ name: 'Login', query: { redirect: to.fullPath } });
+  }
 
-      if (requiredRoles && requiredRoles.length > 0 && !requiredRoles.includes(user.rol)) {
-        next({ name: 'Home' }); // Redirigir a Home si no tiene el rol requerido
-      } else {
-        next(); // Permitir acceso
-      }
+  if (isGuestRoute && isAuthenticated) {
+    // Si la ruta es para invitados (login) y ya está autenticado, redirigir a home.
+    return next({ name: 'Home' });
+  }
+
+  // Si la ruta requiere autenticación (y ya sabemos que está autenticado)
+  if (requiresAuth) {
+    const requiredRoles = to.meta.roles;
+    const user = authService.user.value;
+    // Si la ruta requiere roles específicos y el usuario no los tiene,
+    // lo redirigimos a la página de inicio.
+    if (requiredRoles && requiredRoles.length > 0 && !requiredRoles.includes(user?.rol)) {
+      return next({ name: 'Home' }); // O a una página de error 403 "No Autorizado"
     }
   }
-  // Si la ruta es solo para invitados (ej. login) y el usuario ya está autenticado, redirigir a home
-  else if (to.matched.some(record => record.meta.guest)) {
-    if (isAuthenticated) {
-      console.log('Redirigiendo a home: Usuario autenticado intentando acceder a página de invitado.');
-      next({ name: 'Home' }); // Usuario autenticado, redirigir a home
-    } else {
-      next(); // Usuario no autenticado, permitir acceso a la página de invitado
-    }
-  }
-  // Para cualquier otra ruta que no tenga metadatos específicos, permitir acceso
-  else {
-    next();
-  }
+
+  // Si ninguna de las condiciones anteriores provocó una redirección,
+  // permitimos que el usuario continúe a la ruta solicitada.
+  next();
 });
 
 export default router;

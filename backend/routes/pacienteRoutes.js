@@ -8,8 +8,8 @@ router.get('/buscar', isAuthenticated, pacienteController.searchPacientes);
 
 router.get('/', isAuthenticated, pacienteController.getAllPacientes);
 router.get('/:id', isAuthenticated, pacienteController.getPacienteById);
-router.post('/', isAuthenticated, authorizeRole(['Administrador', 'Recepción', 'Encargado']), pacienteController.createPaciente);
-router.put('/:id', isAuthenticated, authorizeRole(['Administrador', 'Recepción', 'Encargado']), pacienteController.updatePaciente);
-router.delete('/:id', isAuthenticated, authorizeRole(['Administrador']), pacienteController.deletePaciente); // Assuming only Admin can soft delete
+router.post('/', isAuthenticated, authorizeRole(['admin', 'recepcionista']), pacienteController.createPaciente);
+router.put('/:id', isAuthenticated, authorizeRole(['admin', 'recepcionista']), pacienteController.updatePaciente);
+router.delete('/:id', isAuthenticated, authorizeRole(['admin']), pacienteController.deletePaciente); // Assuming only Admin can soft delete
 
 module.exports = router;

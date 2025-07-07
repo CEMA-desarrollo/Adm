@@ -46,13 +46,13 @@ export const navigationItems = [
     name: 'Especialidades',
     icon: 'mdi-star-box',
     component: () => import('@/views/Especialidades.vue'),
-    meta: { requiresAuth: true, roles: ['Administrador'] } // <-- Solo para Admin
+    meta: { requiresAuth: true, roles: ['admin'] } // <-- Cambiado a 'admin'
   },
   {
     path: 'usuarios',
     name: 'Usuarios',
     icon: 'mdi-account-cog',
     component: () => import('@/views/Usuarios.vue'),
-    meta: { requiresAuth: true, roles: ['Administrador'] } // <-- Solo para Admin
+    meta: { requiresAuth: true, roles: ['admin'] } // <-- Cambiado a 'admin'
   },
 ];

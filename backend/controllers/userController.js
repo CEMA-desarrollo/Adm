@@ -248,7 +248,7 @@ const getProfile = (req, res) => {
     // Devolvemos todos los datos del usuario guardados en la sesión.
     // El modelo User.findByUsername ya selecciona todos los campos necesarios (excepto contraseña).
     // Y la función login ya los guarda en req.session.user.
-    return res.json(req.session.user);
+    res.json({ user: req.session.user });
   } else {
     // Esto es una salvaguarda, el middleware ya debería haberlo prevenido.
     return res.status(401).json({ message: 'No autorizado: No hay sesión activa.' });
@@ -395,4 +395,12 @@ module.exports = {
       res.status(500).json({ message: 'Error interno del servidor al actualizar el perfil.' });
     }
   }
+};
+
+const isAuthenticated = (req, res, next) => {
+  console.log('[SESSION_DEBUG] req.session:', req.session);
+  if (req.session.user) {
+    return next();
+  }
+  res.status(401).json({ message: 'No autorizado. Por favor, inicie sesión.' });
 };

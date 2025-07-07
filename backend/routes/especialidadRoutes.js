@@ -6,9 +6,9 @@ const { isAuthenticated, authorizeRole } = require('../middleware/authMiddleware
 // Rutas para la gestión de Especialidades
 router.get('/', isAuthenticated, especialidadController.getAllEspecialidades);
 router.get('/:id', isAuthenticated, especialidadController.getEspecialidadById);
-router.post('/', isAuthenticated, authorizeRole(['Administrador']), especialidadController.createEspecialidad);
-router.put('/:id', isAuthenticated, authorizeRole(['Administrador']), especialidadController.updateEspecialidad);
+router.post('/', isAuthenticated, authorizeRole(['admin']), especialidadController.createEspecialidad);
+router.put('/:id', isAuthenticated, authorizeRole(['admin']), especialidadController.updateEspecialidad);
 // Ruta para la eliminación lógica (desactivación)
-router.delete('/:id', isAuthenticated, authorizeRole(['Administrador']), especialidadController.deleteEspecialidad);
+router.delete('/:id', isAuthenticated, authorizeRole(['admin']), especialidadController.deleteEspecialidad);
 
 module.exports = router;
