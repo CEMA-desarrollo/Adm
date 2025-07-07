@@ -37,6 +37,9 @@ app.use(cors({
 
 app.use(express.json());
 
+// Hacer que la carpeta 'public' sea accesible públicamente
+app.use('/public', express.static('public'));
+
 // --- Configuración de express-session ---
 app.use(session({
   // Usamos FileStore para guardar sesiones en archivos en lugar de en memoria

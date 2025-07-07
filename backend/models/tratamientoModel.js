@@ -44,9 +44,27 @@ const Tratamiento = {
     return updatedTratamiento[0];
   },
 
-  async findAll() {
-    const [rows] = await pool.query('SELECT * FROM tratamientos ORDER BY fecha_tratamiento DESC, created_at DESC');
-    return rows;
+  async findAll(page = 1, limit = 20) { // Valores por defecto para page y limit
+    const offset = (parseInt(page, 10) - 1) * parseInt(limit, 10);
+    // Asegurarse de que limit y offset sean números enteros no negativos
+    const safeLimit = Math.max(1, parseInt(limit, 10));
+    const safeOffset = Math.max(0, parseInt(offset, 10));
+
+    const [rows] = await pool.query(
+      'SELECT * FROM tratamientos ORDER BY fecha_tratamiento DESC, created_at DESC LIMIT ? OFFSET ?',
+      [safeLimit, safeOffset]
+    );
+
+    const [totalResult] = await pool.query('SELECT COUNT(*) as total FROM tratamientos');
+    const totalTratamientos = totalResult[0].total;
+
+    return {
+      tratamientos: rows,
+      total: totalTratamientos,
+      page: parseInt(page, 10),
+      limit: safeLimit,
+      totalPages: Math.ceil(totalTratamientos / safeLimit)
+    };
   },
 
   async findById(id) {
