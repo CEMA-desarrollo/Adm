@@ -1,0 +1,54 @@
+* [33m575a2ee[m[33m ([m[1;31morigin/fix/jules-especialidades-delete[m[33m, [m[1;32mfix/jules-especialidades-delete[m[33m)[m Fix: Prevenir reinicio de nodemon por cambios en archivos de sesión
+* [33m757c7e5[m Review: Analizar persistencia de sesión y problema de logout en F5
+* [33me21c2cc[m Fix: Implementar paginación en GET /api/tratamientos
+* [33m7639734[m feat: Implementar actualización de perfil y servir imágenes estáticas
+[31m|[m * [33m83c344d[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mdev[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m)[m 1
+[31m|[m * [33ma133f0e[m update
+[31m|[m * [33md57a188[m update
+[31m|[m * [33mac6aacb[m jules revision
+[31m|[m * [33mef15240[m update
+[31m|[m * [33m69f61f2[m update back y front
+[31m|[m * [33m5b3f380[m Update gCgZnKauepdH-w_ap9sPHYsOO7GckxO5.json
+[31m|[m *   [33m24194dc[m[33m ([m[1;31morigin/dev[m[33m)[m Merge remote-tracking branch 'origin/fix/jules-especialidades-delete' into dev
+[31m|[m [33m|[m[31m\[m  
+[31m|[m [33m|[m[31m/[m  
+[31m|[m[31m/[m[33m|[m   
+* [33m|[m [33m2794309[m Fix: Corregir lógica de eliminación de especialidades
+[34m|[m * [33ma5c421a[m Update de perfil
+[34m|[m * [33m3e5330a[m Imagen de perfil
+[34m|[m * [33mc785c38[m Actualizacion de roles en el Frontend
+[34m|[m[34m/[m  
+*   [33m302ce6b[m Merge branch 'jules' into 'dev' with conflict resolution
+[35m|[m[36m\[m  
+[35m|[m * [33m0d86431[m[33m ([m[1;32mtest/Jules[m[33m)[m Roles
+[35m|[m * [33m28616f1[m[33m ([m[1;31morigin/test/Jules[m[33m)[m Feat: Update user roles and permissions
+[35m|[m [36m|[m * [33m44ba156[m[33m ([m[1;35mrefs/stash[m[33m)[m On dev: !!GitHub_Desktop<dev>
+[35m|[m [36m|[m[35m/[m[1;32m|[m 
+[35m|[m[35m/[m[36m|[m [1;32m|[m 
+[35m|[m [36m|[m * [33md1c34c0[m index on dev: f744c23 Ultima actualizacion de cambio de nombre en columna de sql usuario y mejora de modulos del frontend
+[35m|[m [36m|[m[35m/[m  
+[35m|[m[35m/[m[36m|[m   
+* [36m|[m [33mf744c23[m[33m ([m[1;31morigin/nueva-funcion[m[33m, [m[1;32mnueva-funcion[m[33m)[m Ultima actualizacion de cambio de nombre en columna de sql usuario y mejora de modulos del frontend
+* [36m|[m [33m51df1a8[m jules
+* [36m|[m [33me1ad0ff[m actualizacion local
+* [36m|[m   [33mb738f0b[m Merge branch 'test/crud-operations-review-fixes' of https://github.com/CEMA-desarrollo/Adm into nueva-funcion
+[1;33m|[m[1;34m\[m [36m\[m  
+* [1;34m|[m [36m|[m [33m2c8b496[m Guardando cambios antes del respaldo
+* [1;34m|[m [36m|[m [33m83af19b[m[33m ([m[1;31morigin/backup-pre-merge-02-07-2025[m[33m, [m[1;32mcrud-fixes[m[33m, [m[1;32mbackup-pre-merge-02-07-2025[m[33m)[m Adds 'estado' field to Tratamiento model
+* [1;34m|[m [36m|[m [33m49bbdf1[m Agrego nueva función X
+* [1;34m|[m [36m|[m [33m8a58766[m Adds findByPatientId to Tratamiento model
+[36m|[m [1;34m|[m[36m/[m  
+[36m|[m[36m/[m[1;34m|[m   
+[36m|[m [1;34m|[m * [33m2a0dc18[m[33m ([m[1;31morigin/test/update02072025[m[33m, [m[1;32mtest/update02072025[m[33m)[m Refactor: Rename hash_contrasena to password for clarity
+[36m|[m [1;34m|[m * [33m22a621e[m Feat: Enhance user module for extended profile information
+[36m|[m [1;34m|[m[36m/[m  
+[36m|[m[36m/[m[1;34m|[m   
+[36m|[m [1;34m|[m * [33medb5e79[m[33m ([m[1;32mtest/crud-operations-review-fixes[m[33m)[m jules
+[36m|[m [1;34m|[m[1;34m/[m  
+[36m|[m * [33m7a8d29b[m[33m ([m[1;31morigin/test/crud-operations-review-fixes[m[33m)[m Refactor: Change treatment deletion to cancellation
+[36m|[m * [33m6b4658d[m Fix: Address findings from CRUD operations review
+[36m|[m[36m/[m  
+* [33mca16495[m Elimine la Carpeta Cema que cree por error
+* [33m82380c1[m Fix: Actualizar .gitignore y dejar de rastrear node_modules
+* [33m77b66ef[m Remove node_modules and add gitignore
+* [33m3c2594c[m Initial commit
