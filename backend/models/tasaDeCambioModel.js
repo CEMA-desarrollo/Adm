@@ -1,34 +1,24 @@
-const dbPool = require('../config/db');
+const db = require('../config/db');
 
-const TasaDeCambio = {
-  async create(data) {
-    const [result] = await dbPool.query('INSERT INTO tasas_de_cambio SET ?', [data]);
-    // Corregido: no desestructurar como array
-    const tasa = await this.findById(result.insertId);
-    return tasa;
+const TasaCambio = {
+  create: async (tasaData) => {
+    const { fecha, tasa_bs_por_usd } = tasaData;
+    const [result] = await db.execute(
+      'INSERT INTO tasas_cambio (fecha, tasa_bs_por_usd) VALUES (?, ?)',
+      [fecha, tasa_bs_por_usd]
+    );
+    return { id: result.insertId, ...tasaData };
   },
 
-  async findAll() {
-    const [rows] = await dbPool.query('SELECT * FROM tasas_de_cambio ORDER BY fecha DESC');
+  findAll: async () => {
+    const [rows] = await db.execute('SELECT * FROM tasas_cambio ORDER BY fecha DESC');
     return rows;
   },
 
-  async findById(id) {
-    const [rows] = await dbPool.query('SELECT * FROM tasas_de_cambio WHERE id = ?', [id]);
-    return rows[0];
-  },
-
-  async findByDate(fecha) {
-    // Busca la tasa para una fecha específica.
-    const [rows] = await dbPool.query('SELECT * FROM tasas_de_cambio WHERE fecha = ?', [fecha]);
-    return rows[0];
-  },
-
-  async findLatest() {
-    // Busca la tasa más reciente.
-    const [rows] = await dbPool.query('SELECT * FROM tasas_de_cambio ORDER BY fecha DESC LIMIT 1');
+  findByDate: async (fecha) => {
+    const [rows] = await db.execute('SELECT * FROM tasas_cambio WHERE fecha = ?', [fecha]);
     return rows[0];
   }
 };
 
-module.exports = TasaDeCambio;
+module.exports = TasaCambio;

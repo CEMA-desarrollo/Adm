@@ -5,6 +5,7 @@ const express = require('express');
 const cors = require('cors');
 const session = require('express-session');
 const FileStore = require('session-file-store')(session); // <-- Importamos el gestor de sesiones en archivo
+const path = require('path'); // <-- Importar el módulo 'path' de Node.js
 
 // 2. Importar módulos de la aplicación
 const dbPool = require('./config/db');
@@ -17,7 +18,6 @@ const proveedorRoutes = require('./routes/proveedorRoutes');
 const servicioRoutes = require('./routes/servicioRoutes');
 const tratamientoRoutes = require('./routes/tratamientoRoutes');
 const especialidadRoutes = require('./routes/especialidadRoutes');
-const tasaDeCambioRoutes = require('./routes/tasaDeCambioRoutes');
 const pagoRoutes = require('./routes/pagoRoutes');
 const bitacoraRoutes = require('./routes/bitacoraRoutes');
 
@@ -44,7 +44,7 @@ app.use('/public', express.static('public'));
 app.use(session({
   // Usamos FileStore para guardar sesiones en archivos en lugar de en memoria
   store: new FileStore({
-    path: './sessions', // Directorio donde se guardarán las sesiones
+    path: path.join(__dirname, 'sessions'), // Usar una ruta absoluta para mayor robustez
     ttl: 86400, // Tiempo de vida de la sesión en segundos (1 día)
     retries: 5, // Aumentar el número de reintentos
     logFn: function(msg) { console.log('[SESSION_DEBUG]', msg); } // Añadir logging detallado
@@ -71,7 +71,6 @@ app.use('/api/proveedores', proveedorRoutes);
 app.use('/api/servicios', servicioRoutes);
 app.use('/api/especialidades', especialidadRoutes);
 app.use('/api/tratamientos', tratamientoRoutes);
-app.use('/api/tasas-cambio', tasaDeCambioRoutes);
 app.use('/api/pagos', pagoRoutes);
 app.use('/api/bitacora', bitacoraRoutes);
 
