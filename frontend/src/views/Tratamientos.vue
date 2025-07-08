@@ -424,18 +424,22 @@ function anadirTratamientoALote() {
   const proveedor = proveedoresList.value.find(p => p.id === proveedor_id);
   const servicio = serviciosFiltrados.value.find(s => s.id === servicio_id);
 
-  tratamientosParaLote.value.push({
+  // Se crea un nuevo objeto para el tratamiento usando el 'defaultItem' como plantilla.
+  // Esto es el equivalente a tener un "input oculto" con el estado 'Programado'.
+  const nuevoTratamiento = {
+    ...defaultItem,
     paciente_id: pacienteParaLote.value,
     proveedor_id,
     servicio_id,
     fecha_tratamiento: fechaParaLote.value,
+    costo_original_usd: servicio?.precio_sugerido_usd || costo_final_acordado_usd,
     costo_final_acordado_usd,
-    estado: 'Programado', // Añadir estado explícitamente
-    costo_original_usd: costo_final_acordado_usd, // Añadir costo original
-    // Para mostrar en la tabla del diálogo
+    // Campos extra solo para visualización en la tabla del diálogo:
     proveedor_nombre: proveedor ? proveedor.nombre_completo : 'N/A',
     servicio_nombre: servicio ? servicio.nombre_servicio : 'N/A',
-  });
+  };
+
+  tratamientosParaLote.value.push(nuevoTratamiento);
 
   // Limpiar campos para el siguiente item
   editedItem.value.proveedor_id = null;
@@ -460,8 +464,8 @@ async function saveItem() {
       }
       
       // Asegurar que el estado tenga un valor válido antes de actualizar
-      if (!item.estado || item.estado.trim() === '') {
-        item.estado = 'Programado'; // Valor por defecto si está vacío
+      if (!item.estado) {
+        item.estado = 'Programado';
       }
       
       await tratamientoService.update(item.id, item);
@@ -473,19 +477,21 @@ async function saveItem() {
         return;
       }
       
-      // Iteramos y enviamos cada tratamiento del lote uno por uno.
       for (const tratamiento of tratamientosParaLote.value) {
-        const dataParaCrear = {
+        // Se construye un objeto "limpio" desde cero para enviar al backend.
+        // Esto imita la idea de un "input oculto", garantizando que el estado se envíe.
+        const payloadLimpio = {
           paciente_id: tratamiento.paciente_id,
           proveedor_id: tratamiento.proveedor_id,
           servicio_id: tratamiento.servicio_id,
           fecha_tratamiento: tratamiento.fecha_tratamiento,
+          costo_original_usd: tratamiento.costo_original_usd,
           costo_final_acordado_usd: tratamiento.costo_final_acordado_usd,
-          estado: 'Programado', // Estado explícito y garantizado
-          descripcion_adicional: '', 
-          costo_original_usd: tratamiento.costo_final_acordado_usd // Añadir este campo también
+          estado: 'Programado', // Garantizado
+          descripcion_adicional: tratamiento.descripcion_adicional || '',
+          justificacion_descuento: tratamiento.justificacion_descuento || ''
         };
-        await tratamientoService.create(dataParaCrear);
+        await tratamientoService.create(payloadLimpio);
       }
       showSnackbar(`${tratamientosParaLote.value.length} tratamientos creados con éxito.`);
     }

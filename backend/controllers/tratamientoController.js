@@ -47,7 +47,7 @@
 
  const createTratamiento = async (req, res) => {
    try {
-     const { paciente_id, proveedor_id, servicio_id, costo_final_acordado_usd, justificacion_descuento, fecha_tratamiento, descripcion_adicional } = req.body || {};
+     const { paciente_id, proveedor_id, servicio_id, costo_final_acordado_usd, justificacion_descuento, fecha_tratamiento, descripcion_adicional, estado } = req.body || {};
 
      if (!paciente_id || !proveedor_id || !servicio_id || !fecha_tratamiento) {
        return res.status(400).json({ message: 'Los campos paciente_id, proveedor_id, servicio_id y fecha_tratamiento son obligatorios.' });
@@ -80,7 +80,7 @@
        costo_final_acordado_usd: costo_final_acordado_usd !== undefined ? costo_final_acordado_usd : costo_original_usd,
        justificacion_descuento,
        fecha_tratamiento,
-       estado: 'Registrado' // Default status
+       estado: estado || 'Programado' // Usar el estado del frontend o un valor por defecto
      };
 
      let montoPendienteTratamiento = nuevoTratamientoData.costo_final_acordado_usd;
