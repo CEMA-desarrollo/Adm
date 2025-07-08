@@ -44,7 +44,6 @@
       <v-data-table
         :headers="headers"
         :items="filteredTratamientos"
-        :search="search"
         :loading="loading"
         loading-text="Cargando datos..."
         no-data-text="No se encontraron tratamientos."
@@ -215,16 +214,29 @@ const headers = ref([
 const formTitle = computed(() => (editedItem.value.id ? 'Editar Tratamiento' : 'Nuevo Tratamiento'));
 
 const filteredTratamientos = computed(() => {
-  return tratamientos.value.filter(t => {
-    // Si no hay fechas de filtro, no se aplica filtro de fecha.
-    if (!filterStartDate.value && !filterEndDate.value) return true;
-    
+  let items = tratamientos.value;
+
+  // 1. Filtrar por rango de fechas
+  if (filterStartDate.value || filterEndDate.value) {
+    items = items.filter(t => {
     const treatmentDate = t.fecha_tratamiento.split('T')[0];
     const isAfterStart = filterStartDate.value ? treatmentDate >= filterStartDate.value : true;
     const isBeforeEnd = filterEndDate.value ? treatmentDate <= filterEndDate.value : true;
-    
     return isAfterStart && isBeforeEnd;
-  });
+    });
+  }
+
+  // 2. Filtrar por el campo de búsqueda de texto
+  if (search.value && search.value.trim() !== '') {
+    const searchTerm = search.value.toLowerCase();
+    items = items.filter(t => 
+      (t.paciente_nombre && t.paciente_nombre.toLowerCase().includes(searchTerm)) ||
+      (t.proveedor_nombre && t.proveedor_nombre.toLowerCase().includes(searchTerm)) ||
+      (t.servicio_nombre && t.servicio_nombre.toLowerCase().includes(searchTerm))
+    );
+  }
+
+  return items;
 });
 
 const serviciosFiltrados = computed(() => {
@@ -250,7 +262,8 @@ async function loadInitialData() {
     ]);
 
     // Se asegura de que los datos sean un array, incluso si la API devuelve un objeto { data: [...] }
-    const tratamientosData = Array.isArray(tratamientosRes) ? tratamientosRes : (tratamientosRes.data || []);
+    // Corregido: La API devuelve los tratamientos dentro de la propiedad 'tratamientos'.
+    const tratamientosData = Array.isArray(tratamientosRes) ? tratamientosRes : (tratamientosRes.tratamientos || []);
     const pacientesData = Array.isArray(pacientesRes) ? pacientesRes : (pacientesRes.data || []);
     const proveedoresData = Array.isArray(proveedoresRes) ? proveedoresRes : (proveedoresRes.data || []);
     const serviciosData = Array.isArray(serviciosRes) ? serviciosRes : (serviciosRes.data || []);
@@ -268,6 +281,7 @@ async function loadInitialData() {
         servicio_nombre: servicio ? servicio.nombre_servicio : 'Desconocido',
       };
     });
+
     pacientesList.value = pacientesData.map(p => ({
       ...p,
       nombre_completo_ci: `${p.nombre} ${p.apellido} (${p.documento_identidad})`
@@ -402,6 +416,6 @@ function getEstadoColor(estado) {
     case 'Cancelado': return 'orange-darken-2';
     case 'Programado': return 'blue';
     default: return 'grey';
-  }
+  };
 }
 </script>
