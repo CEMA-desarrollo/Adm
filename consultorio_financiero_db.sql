@@ -362,21 +362,25 @@ INSERT INTO `servicios` (`id`, `nombre_servicio`, `especialidad_id`, `descripcio
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `tasas_de_cambio`
+-- Estructura de tabla para la tabla `tasas_cambio`
 --
 
-CREATE TABLE `tasas_de_cambio` (
+CREATE TABLE `tasas_cambio` (
   `id` int(11) NOT NULL,
+  `tasa_bs_por_usd` decimal(10,4) NOT NULL,
   `fecha` date NOT NULL,
-  `tasa_ves_por_usd` decimal(18,4) NOT NULL,
-  `fecha_registro` timestamp NOT NULL DEFAULT current_timestamp()
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Volcado de datos para la tabla `tasas_de_cambio`
+-- Volcado de datos para la tabla `tasas_cambio`
 --
+-- Manteniendo el dato existente, adaptado a la nueva estructura:
+-- El id original era 1, fecha '2025-06-24', tasa 40.5000.
+-- created_at será el 'fecha_registro' original. updated_at se autocompletará.
 
-INSERT INTO `tasas_de_cambio` (`id`, `fecha`, `tasa_ves_por_usd`, `fecha_registro`) VALUES
+INSERT INTO `tasas_cambio` (`id`, `fecha`, `tasa_bs_por_usd`, `created_at`) VALUES
 (1, '2025-06-24', 40.5000, '2025-06-23 22:25:15');
 
 -- --------------------------------------------------------
@@ -502,9 +506,9 @@ ALTER TABLE `servicios`
   ADD KEY `fk_servicio_especialidad` (`especialidad_id`);
 
 --
--- Indices de la tabla `tasas_de_cambio`
+-- Indices de la tabla `tasas_cambio`
 --
-ALTER TABLE `tasas_de_cambio`
+ALTER TABLE `tasas_cambio`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `fecha` (`fecha`);
 
@@ -566,9 +570,9 @@ ALTER TABLE `servicios`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
--- AUTO_INCREMENT de la tabla `tasas_de_cambio`
+-- AUTO_INCREMENT de la tabla `tasas_cambio`
 --
-ALTER TABLE `tasas_de_cambio`
+ALTER TABLE `tasas_cambio`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
