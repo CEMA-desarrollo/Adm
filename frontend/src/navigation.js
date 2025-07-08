@@ -42,6 +42,13 @@ export const navigationItems = [
     meta: { requiresAuth: true }
   },
   {
+    path: 'tasas-de-cambio',
+    name: 'Tasa de Cambio',
+    icon: 'mdi-currency-usd',
+    component: () => import('@/views/TasasDeCambio.vue'),
+    meta: { requiresAuth: true, roles: ['Administrador'] }
+  },
+  {
     path: 'especialidades',
     name: 'Especialidades',
     icon: 'mdi-star-box',
