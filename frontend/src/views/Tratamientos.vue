@@ -169,12 +169,18 @@ const getWeekRange = () => {
   const monday = new Date(today);
   monday.setDate(today.getDate() + diffToMonday);
   
-  const saturday = new Date(monday);
-  saturday.setDate(monday.getDate() + 5);
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6); // Lunes + 6 días = Domingo
   
-  const format = (date) => date.toISOString().split('T')[0];
+  // Formatea la fecha a YYYY-MM-DD en la zona horaria local para evitar problemas con UTC.
+  const format = (date) => {
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
   
-  return { start: format(monday), end: format(saturday) };
+  return { start: format(monday), end: format(sunday) };
 };
 
 const { start: weekStart, end: weekEnd } = getWeekRange();
@@ -236,12 +242,18 @@ const serviciosFiltrados = computed(() => {
 async function loadInitialData() {
   loading.value = true;
   try {
-    const [tratamientosData, pacientesData, proveedoresData, serviciosData] = await Promise.all([
+    const [tratamientosRes, pacientesRes, proveedoresRes, serviciosRes] = await Promise.all([
       tratamientoService.getAll(),
       pacienteService.getAll(),
       proveedorService.getAll(true), // Solo proveedores activos
       servicioService.getAll(true)  // Solo servicios activos
     ]);
+
+    // Se asegura de que los datos sean un array, incluso si la API devuelve un objeto { data: [...] }
+    const tratamientosData = Array.isArray(tratamientosRes) ? tratamientosRes : (tratamientosRes.data || []);
+    const pacientesData = Array.isArray(pacientesRes) ? pacientesRes : (pacientesRes.data || []);
+    const proveedoresData = Array.isArray(proveedoresRes) ? proveedoresRes : (proveedoresRes.data || []);
+    const serviciosData = Array.isArray(serviciosRes) ? serviciosRes : (serviciosRes.data || []);
 
     // Enriquecemos los datos de tratamientos en el frontend.
     // Esto nos protege si la API no devuelve los nombres y asegura que la tabla siempre se vea bien.
