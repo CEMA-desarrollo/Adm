@@ -75,64 +75,80 @@
     </v-card>
 
     <!-- Aquí irá el diálogo para crear/editar tratamientos -->
-    <v-dialog v-model="dialog" max-width="700px" persistent>
+    <v-dialog v-model="dialog" max-width="900px" persistent>
       <v-card>
-        <v-card-title>
+        <v-card-title class="pb-0">
           <span class="text-h5">{{ formTitle }}</span>
         </v-card-title>
         <v-card-text>
           <v-container>
-            <v-row>
-              <!-- Fila 1: Paciente y Proveedor -->
-              <v-col cols="12" sm="6">
-                <v-autocomplete 
-                  v-model="editedItem.paciente_id"
-                  label="Seleccionar Paciente" 
-                  :items="pacientesList" 
-                  item-title="nombre_completo_ci" 
-                  item-value="id" 
-                  variant="outlined"
-                  clearable
-                ></v-autocomplete>
-              </v-col>
-              <v-col cols="12" sm="6">
-                <v-autocomplete v-model="editedItem.proveedor_id" label="Seleccionar Proveedor" :items="proveedoresList" item-title="nombre_completo" item-value="id" variant="outlined" clearable></v-autocomplete>
-              </v-col>
-
-              <!-- Fila 2: Servicio y Fecha -->
-              <v-col cols="12" sm="6">
-                <v-autocomplete 
-                  v-model="editedItem.servicio_id" 
-                  label="Seleccionar Servicio" 
-                  :items="serviciosFiltrados" 
-                  item-title="nombre_servicio" 
-                  item-value="id" 
-                  variant="outlined" 
-                  clearable
-                  :disabled="!editedItem.proveedor_id || isLoadingServicios"
-                  :loading="isLoadingServicios"
-                  no-data-text="Seleccione un proveedor o este no tiene servicios asignados"
-                ></v-autocomplete>
-              </v-col>
-              <v-col cols="12" sm="6">
-                <v-text-field v-model="editedItem.fecha_tratamiento" type="date" label="Fecha del Tratamiento" variant="outlined"></v-text-field>
-              </v-col>
-
-              <!-- Fila 3: Costos y Estado -->
-              <v-col cols="12" sm="6">
-                <v-text-field v-model="editedItem.costo_final_acordado_usd" label="Costo Acordado (USD)" type="number" prefix="$" variant="outlined"></v-text-field>
-              </v-col>
-              <v-col cols="12" sm="6">
-                 <v-select v-model="editedItem.estado" label="Estado" :items="['Programado', 'Realizado', 'Cancelado']" variant="outlined"></v-select>
-              </v-col>
-
+            <!-- Formulario para un solo tratamiento (Editar) -->
+            <v-row v-if="editedItem.id">
+                <!-- Fila 1: Paciente y Proveedor -->
+                <v-col cols="12" sm="6">
+                  <v-autocomplete v-model="editedItem.paciente_id" label="Seleccionar Paciente" :items="pacientesList" item-title="nombre_completo_ci" item-value="id" variant="outlined" clearable></v-autocomplete>
+                </v-col>
+                <v-col cols="12" sm="6">
+                  <v-autocomplete v-model="editedItem.proveedor_id" label="Seleccionar Proveedor" :items="proveedoresList" item-title="nombre_completo" item-value="id" variant="outlined" clearable></v-autocomplete>
+                </v-col>
+                <!-- Fila 2: Servicio y Fecha -->
+                <v-col cols="12" sm="6">
+                  <v-autocomplete v-model="editedItem.servicio_id" label="Seleccionar Servicio" :items="serviciosFiltrados" item-title="nombre_servicio" item-value="id" variant="outlined" clearable :disabled="!editedItem.proveedor_id || isLoadingServicios" :loading="isLoadingServicios" no-data-text="Seleccione un proveedor"></v-autocomplete>
+                </v-col>
+                <v-col cols="12" sm="6">
+                  <v-text-field v-model="editedItem.fecha_tratamiento" type="date" label="Fecha del Tratamiento" variant="outlined"></v-text-field>
+                </v-col>
+                <!-- Fila 3: Costos y Estado -->
+                <v-col cols="12" sm="6">
+                  <v-text-field v-model="editedItem.costo_final_acordado_usd" label="Costo Acordado (USD)" type="number" prefix="$" variant="outlined"></v-text-field>
+                </v-col>
+                <v-col cols="12" sm="6">
+                  <v-select v-model="editedItem.estado" label="Estado" :items="['Programado', 'Realizado', 'Cancelado']" variant="outlined"></v-select>
+                </v-col>
             </v-row>
+
+            <!-- Formulario para múltiples tratamientos (Crear) -->
+            <div v-else>
+              <v-row>
+                <v-col cols="12" md="8">
+                  <v-autocomplete v-model="pacienteParaLote" label="Seleccionar Paciente" :items="pacientesList" item-title="nombre_completo_ci" item-value="id" variant="outlined" clearable :disabled="tratamientosParaLote.length > 0"></v-autocomplete>
+                </v-col>
+                <v-col cols="12" md="4">
+                  <v-text-field v-model="fechaParaLote" type="date" label="Fecha para Tratamientos" variant="outlined" :disabled="tratamientosParaLote.length > 0"></v-text-field>
+                </v-col>
+              </v-row>
+              <v-divider class="my-4"></v-divider>
+              <v-row align="center">
+                <v-col cols="12" md="3"><v-autocomplete v-model="editedItem.proveedor_id" label="Proveedor" :items="proveedoresList" item-title="nombre_completo" item-value="id" variant="outlined" density="compact" hide-details></v-autocomplete></v-col>
+                <v-col cols="12" md="4"><v-autocomplete v-model="editedItem.servicio_id" label="Servicio" :items="serviciosFiltrados" item-title="nombre_servicio" item-value="id" variant="outlined" density="compact" hide-details :disabled="!editedItem.proveedor_id || isLoadingServicios" :loading="isLoadingServicios" no-data-text="Seleccione proveedor"></v-autocomplete></v-col>
+                <v-col cols="12" md="2"><v-text-field v-model="editedItem.costo_final_acordado_usd" label="Costo" type="number" prefix="$" variant="outlined" density="compact" hide-details></v-text-field></v-col>
+                <v-col cols="12" md="3">
+                  <v-btn color="primary" @click="anadirTratamientoALote" block :disabled="!pacienteParaLote || !editedItem.servicio_id">Añadir a la lista</v-btn>
+                </v-col>
+              </v-row>
+              <v-data-table
+                :headers="cabecerasLote"
+                :items="tratamientosParaLote"
+                class="mt-4"
+                no-data-text="Añada tratamientos a la lista."
+                density="compact"
+              >
+                <template v-slot:item.costo_final_acordado_usd="{ value }">${{ parseFloat(value).toFixed(2) }}</template>
+                <template v-slot:item.actions="{ index }">
+                  <v-icon size="small" @click="quitarTratamientoDeLote(index)">mdi-delete</v-icon>
+                </template>
+                <template v-slot:bottom></template>
+              </v-data-table>
+              <div class="d-flex justify-end mt-2 text-h6">
+                Total: ${{ totalLote.toFixed(2) }}
+              </div>
+            </div>
           </v-container>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn color="blue-darken-1" variant="text" @click="closeDialog">Cancelar</v-btn>
-          <v-btn color="blue-darken-1" variant="text" @click="saveItem">Guardar</v-btn>
+          <v-btn color="blue-darken-1" variant="text" @click="saveItem" :disabled="!editedItem.id && tratamientosParaLote.length === 0">Guardar</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -159,6 +175,11 @@ const proveedoresList = ref([]);
 const serviciosList = ref([]);
 const serviciosAsignados = ref([]);
 const isLoadingServicios = ref(false);
+
+// --- State para el modo de creación por lote ---
+const tratamientosParaLote = ref([]);
+const pacienteParaLote = ref(null);
+const fechaParaLote = ref(new Date().toISOString().substr(0, 10));
 
 const getWeekRange = () => {
   const today = new Date();
@@ -194,7 +215,7 @@ const defaultItem = {
   fecha_tratamiento: new Date().toISOString().substr(0, 10),
   costo_original_usd: null,
   costo_final_acordado_usd: null,
-  estado: 'Programado',
+  estado: 'Programado', // Valor por defecto explícito
   descripcion_adicional: '',
   justificacion_descuento: '',
 };
@@ -208,6 +229,13 @@ const headers = ref([
   { title: 'Servicio', key: 'servicio_nombre' },
   { title: 'Costo', key: 'costo_final_acordado_usd', align: 'end' },
   { title: 'Estado', key: 'estado', align: 'center' },
+  { title: 'Acciones', key: 'actions', sortable: false, align: 'center' },
+]);
+
+const cabecerasLote = ref([
+  { title: 'Proveedor', key: 'proveedor_nombre' },
+  { title: 'Servicio', key: 'servicio_nombre' },
+  { title: 'Costo', key: 'costo_final_acordado_usd', align: 'end' },
   { title: 'Acciones', key: 'actions', sortable: false, align: 'center' },
 ]);
 
@@ -249,6 +277,10 @@ const serviciosFiltrados = computed(() => {
 
   // Filtramos la lista principal de servicios del sistema para mostrar solo los asignados.
   return serviciosList.value.filter(s => assignedIds.has(s.id));
+});
+
+const totalLote = computed(() => {
+  return tratamientosParaLote.value.reduce((sum, item) => sum + parseFloat(item.costo_final_acordado_usd || 0), 0);
 });
 
 async function loadInitialData() {
@@ -336,11 +368,14 @@ watch(() => editedItem.value.servicio_id, (newServiceId) => {
   }
 });
 
-// Función para abrir el diálogo de nuevo tratamiento (aún por implementar)
+// Función para abrir el diálogo de nuevo tratamiento
 function openNewTratamientoDialog() {
   console.log('Abriendo diálogo para nuevo tratamiento...');
+  // Reseteamos el item de edición y el lote
   editedItem.value = { ...defaultItem };
-  dialog.value = true; // ¡Esta línea abre el diálogo!
+  tratamientosParaLote.value = [];
+  pacienteParaLote.value = null;
+  dialog.value = true;
 }
 
 async function editTratamiento(item) {
@@ -373,36 +408,94 @@ async function cancelTratamiento(item) {
 }
 
 function closeDialog() {
+  // Reseteamos el estado del lote al cerrar para evitar datos residuales
+  tratamientosParaLote.value = [];
+  pacienteParaLote.value = null;
   dialog.value = false;
 }
 
-async function saveItem() {
-  // --- Validación de campos obligatorios ---
-  const item = editedItem.value;
-  if (!item.paciente_id || !item.proveedor_id || !item.servicio_id || !item.fecha_tratamiento || !item.costo_final_acordado_usd) {
-    showSnackbar('Por favor, complete todos los campos: Paciente, Proveedor, Servicio, Fecha y Costo.', 'warning');
+function anadirTratamientoALote() {
+  const { proveedor_id, servicio_id, costo_final_acordado_usd } = editedItem.value;
+  if (!proveedor_id || !servicio_id || costo_final_acordado_usd == null) {
+    showSnackbar('Debe seleccionar proveedor, servicio y costo.', 'warning');
     return;
   }
-  // --- Fin de la validación ---
+
+  const proveedor = proveedoresList.value.find(p => p.id === proveedor_id);
+  const servicio = serviciosFiltrados.value.find(s => s.id === servicio_id);
+
+  tratamientosParaLote.value.push({
+    paciente_id: pacienteParaLote.value,
+    proveedor_id,
+    servicio_id,
+    fecha_tratamiento: fechaParaLote.value,
+    costo_final_acordado_usd,
+    estado: 'Programado', // Añadir estado explícitamente
+    costo_original_usd: costo_final_acordado_usd, // Añadir costo original
+    // Para mostrar en la tabla del diálogo
+    proveedor_nombre: proveedor ? proveedor.nombre_completo : 'N/A',
+    servicio_nombre: servicio ? servicio.nombre_servicio : 'N/A',
+  });
+
+  // Limpiar campos para el siguiente item
+  editedItem.value.proveedor_id = null;
+  editedItem.value.servicio_id = null;
+  editedItem.value.costo_final_acordado_usd = null;
+}
+
+function quitarTratamientoDeLote(index) {
+  tratamientosParaLote.value.splice(index, 1);
+}
+
+async function saveItem() {
+  const item = editedItem.value;
 
   try {
     if (item.id) {
-      // Actualizando un tratamiento existente
+      // --- Lógica para ACTUALIZAR un tratamiento existente ---
+      const costoEsValido = item.costo_final_acordado_usd !== null && item.costo_final_acordado_usd !== undefined && item.costo_final_acordado_usd !== '';
+      if (!item.paciente_id || !item.proveedor_id || !item.servicio_id || !item.fecha_tratamiento || !costoEsValido) {
+        showSnackbar('Por favor, complete todos los campos requeridos.', 'warning');
+        return;
+      }
+      
+      // Asegurar que el estado tenga un valor válido antes de actualizar
+      if (!item.estado || item.estado.trim() === '') {
+        item.estado = 'Programado'; // Valor por defecto si está vacío
+      }
+      
       await tratamientoService.update(item.id, item);
       showSnackbar('Tratamiento actualizado con éxito.');
     } else {
-      // Creando un nuevo tratamiento
-      await tratamientoService.create(item);
-      showSnackbar('Tratamiento creado con éxito.');
+      // --- Lógica para CREAR tratamientos en lote ---
+      if (tratamientosParaLote.value.length === 0) {
+        showSnackbar('No hay tratamientos en la lista para guardar.', 'info');
+        return;
+      }
+      
+      // Iteramos y enviamos cada tratamiento del lote uno por uno.
+      for (const tratamiento of tratamientosParaLote.value) {
+        const dataParaCrear = {
+          paciente_id: tratamiento.paciente_id,
+          proveedor_id: tratamiento.proveedor_id,
+          servicio_id: tratamiento.servicio_id,
+          fecha_tratamiento: tratamiento.fecha_tratamiento,
+          costo_final_acordado_usd: tratamiento.costo_final_acordado_usd,
+          estado: 'Programado', // Estado explícito y garantizado
+          descripcion_adicional: '', 
+          costo_original_usd: tratamiento.costo_final_acordado_usd // Añadir este campo también
+        };
+        await tratamientoService.create(dataParaCrear);
+      }
+      showSnackbar(`${tratamientosParaLote.value.length} tratamientos creados con éxito.`);
     }
-    // La solución más robusta: recargar todos los datos desde el servidor.
-    // Esto asegura que la tabla siempre muestre la información más reciente y completa.
+    
+    // Al finalizar con éxito, recargamos los datos para ver los cambios y cerramos el diálogo.
     await loadInitialData();
+    closeDialog();
   } catch (error) {
     console.error("Error al guardar el tratamiento:", error);
     showSnackbar(`Error al guardar: ${error.response?.data?.message || error.message}`, 'error');
-  } finally {
-    closeDialog();
   }
 }
 
