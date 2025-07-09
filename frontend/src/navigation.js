@@ -42,6 +42,13 @@ export const navigationItems = [
     meta: { requiresAuth: true }
   },
   {
+    path: 'gestion-caja',
+    name: 'Gestión de Caja',
+    icon: 'mdi-cash-register',
+    component: () => import('@/views/GestionCaja.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: 'especialidades',
     name: 'Especialidades',
     icon: 'mdi-star-box',
@@ -55,4 +62,6 @@ export const navigationItems = [
     component: () => import('@/views/Usuarios.vue'),
     meta: { requiresAuth: true, roles: ['Administrador'] }
   },
+  
+  
 ];

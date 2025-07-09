@@ -24,9 +24,21 @@
           <!-- Estado: Caja Abierta -->
           <v-alert v-if="cajaAbierta" type="success" variant="outlined" icon="mdi-lock-open-variant-outline">
             <h3 class="mb-2">Caja Abierta</h3>
-            <p>La caja fue abierta por <strong>{{ sesionActual.nombre_usuario }}</strong>.</p>
-            <p>Fecha de apertura: <strong>{{ formatDate(sesionActual.fecha_apertura) }}</strong></p>
-            <p>Monto de apertura: <strong>${{ parseFloat(sesionActual.monto_apertura_usd).toFixed(2) }}</strong></p>
+            <p>Abierta por: <strong>{{ sesionActual.nombre_usuario }}</strong> el <strong>{{ formatDate(sesionActual.fecha_apertura) }}</strong></p>
+            <v-divider class="my-2"></v-divider>
+            <p class="font-weight-bold">Montos de Apertura:</p>
+            <v-list dense class="transparent-list">
+              <v-list-item v-for="metodo in metodosDePago" :key="`apertura-${metodo.key}`" class="px-0 py-1" min-height="28px">
+                <v-list-item-title>{{ metodo.label }}: <strong>{{ metodo.prefix }} {{ formatCurrency(sesionActual.montos_apertura[metodo.key]) }}</strong></v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </v-alert>
+
+          <!-- Estado: Caja Ocupada por otro usuario -->
+          <v-alert v-else-if="cajaOcupada" type="info" variant="tonal" icon="mdi-account-lock-outline" border="start">
+            <h3 class="mb-2">Caja en Uso</h3>
+            <p>La caja está actualmente abierta y siendo gestionada por <strong>{{ sesionActual.nombre_usuario }}</strong>.</p>
+            <p>No puedes realizar acciones hasta que la sesión actual sea cerrada por un administrador.</p>
           </v-alert>
 
           <!-- Estado: Caja Cerrada -->
@@ -40,7 +52,7 @@
       <v-card-actions class="pa-4">
         <v-spacer></v-spacer>
         <v-btn
-          v-if="!cajaAbierta"
+          v-if="!cajaAbierta && !cajaOcupada"
           color="primary"
           variant="flat"
           @click="dialogAbrir = true"
@@ -67,14 +79,16 @@
       <v-card>
         <v-card-title>Abrir Sesión de Caja</v-card-title>
         <v-card-text>
+          <p class="mb-4">Introduce los montos iniciales para cada método de pago.</p>
           <v-text-field
-            v-model.number="montoApertura"
-            label="Monto de Apertura (USD)"
+            v-for="metodo in metodosDePago"
+            :key="`input-apertura-${metodo.key}`"
+            v-model.number="montosApertura[metodo.key]"
+            :label="metodo.label"
             type="number"
-            prefix="$"
+            :prefix="metodo.prefix"
             variant="outlined"
-            autofocus
-            :rules="[v => !!v || 'El monto es requerido', v => v >= 0 || 'El monto no puede ser negativo']"
+            class="mb-2"
           ></v-text-field>
         </v-card-text>
         <v-card-actions>
@@ -90,15 +104,16 @@
       <v-card>
         <v-card-title>Cerrar Sesión de Caja</v-card-title>
         <v-card-text>
-          <p class="mb-4">Estás a punto de cerrar la caja. Por favor, cuenta el dinero y registra el monto real.</p>
+          <p class="mb-4">Realiza el conteo y registra los montos finales para cada método de pago.</p>
           <v-text-field
-            v-model.number="montoCierreReal"
-            label="Monto Real en Caja (USD)"
+            v-for="metodo in metodosDePago"
+            :key="`input-cierre-${metodo.key}`"
+            v-model.number="montosCierreReal[metodo.key]"
+            :label="metodo.label"
             type="number"
-            prefix="$"
+            :prefix="metodo.prefix"
             variant="outlined"
-            autofocus
-            :rules="[v => v !== null && v !== '' || 'El monto es requerido', v => v >= 0 || 'El monto no puede ser negativo']"
+            class="mb-2"
           ></v-text-field>
           <v-textarea
             v-model="notasCierre"
@@ -128,19 +143,35 @@ import cajaService from '@/services/cajaService';
 // const authStore = useAuthStore();
 // const esAdmin = computed(() => authStore.user?.rol === 'Administrador');
 // Placeholder si no usas un store:
-const esAdmin = ref(true); // Cambiar por la lógica real de roles
+const esAdmin = ref(true); // TODO: Cambiar por la lógica real de roles
+
+const metodosDePago = ref([
+  { key: 'dolares_efectivo', label: 'Dólares (Efectivo)', prefix: '$' },
+  { key: 'bolivares_efectivo', label: 'Bolívares (Efectivo)', prefix: 'Bs.' },
+  { key: 'transferencia', label: 'Transferencia (Bs.)', prefix: 'Bs.' },
+  { key: 'pago_movil', label: 'Pago Móvil (Bs.)', prefix: 'Bs.' },
+  { key: 'zelle', label: 'Zelle ($)', prefix: '$' },
+  { key: 'punto_a', label: 'Punto de Venta A (Bs.)', prefix: 'Bs.' },
+  { key: 'punto_b', label: 'Punto de Venta B (Bs.)', prefix: 'Bs.' },
+]);
+
+const getInitialMontos = () => metodosDePago.value.reduce((acc, metodo) => {
+  acc[metodo.key] = 0;
+  return acc;
+}, {});
+
+const montosApertura = ref(getInitialMontos());
+const montosCierreReal = ref(getInitialMontos());
 
 const loading = ref(true);
 const actionLoading = ref(false);
 const cajaAbierta = ref(false);
+const cajaOcupada = ref(false); // Nuevo estado para caja en uso por otro
 const sesionActual = ref(null);
 const snackbar = ref({ show: false, text: '', color: 'success' });
 
 const dialogAbrir = ref(false);
-const montoApertura = ref(0);
-
 const dialogCerrar = ref(false);
-const montoCierreReal = ref(null);
 const notasCierre = ref('');
 
 const fetchEstadoCaja = async () => {
@@ -148,6 +179,7 @@ const fetchEstadoCaja = async () => {
   try {
     const { data } = await cajaService.getEstado();
     cajaAbierta.value = data.estado === 'ABIERTA';
+    cajaOcupada.value = data.estado === 'ABIERTA_POR_OTRO';
     sesionActual.value = data.sesion;
   } catch (error) {
     showSnackbar('Error al consultar el estado de la caja.', 'error');
@@ -157,16 +189,12 @@ const fetchEstadoCaja = async () => {
 };
 
 const handleAbrirCaja = async () => {
-  if (montoApertura.value === null || montoApertura.value < 0) {
-    showSnackbar('Por favor, introduce un monto de apertura válido.', 'warning');
-    return;
-  }
   actionLoading.value = true;
   try {
-    await cajaService.abrirCaja(montoApertura.value);
+    await cajaService.abrirCaja({ montos_apertura: montosApertura.value });
     showSnackbar('Caja abierta exitosamente.', 'success');
     dialogAbrir.value = false;
-    montoApertura.value = 0;
+    montosApertura.value = getInitialMontos(); // Resetear formulario
     await fetchEstadoCaja(); // Refrescar estado
   } catch (error) {
     showSnackbar(error.response?.data?.message || 'Error al abrir la caja.', 'error');
@@ -176,10 +204,55 @@ const handleAbrirCaja = async () => {
 };
 
 const handleCerrarCaja = async () => {
-  if (montoCierreReal.value === null || montoCierreReal.value < 0) {
-    showSnackbar('Por favor, introduce el monto real en caja.', 'warning');
-    return;
-  }
   actionLoading.value = true;
   try {
-    const datos
+    const datosCierre = {
+      montos_cierre_real: montosCierreReal.value,
+      notas: notasCierre.value,
+    };
+    await cajaService.cerrarCaja(datosCierre);
+    showSnackbar('Caja cerrada exitosamente.', 'success');
+    dialogCerrar.value = false;
+    notasCierre.value = '';
+    montosCierreReal.value = getInitialMontos(); // Resetear formulario
+    await fetchEstadoCaja(); // Refrescar estado
+  } catch (error) {
+    showSnackbar(error.response?.data?.message || 'Error al cerrar la caja.', 'error');
+  } finally {
+    actionLoading.value = false;
+  }
+};
+
+const showSnackbar = (text, color = 'success') => {
+  snackbar.value = { show: true, text, color };
+};
+
+const formatDate = (dateString) => {
+  if (!dateString) return '';
+  const options = {
+    year: 'numeric', month: 'long', day: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+    timeZone: 'America/Caracas' // Ajustar a la zona horaria local
+  };
+  return new Date(dateString).toLocaleString('es-VE', options);
+};
+
+const formatCurrency = (value) => {
+  const num = Number(value);
+  if (isNaN(num)) {
+    return '0.00';
+  }
+  return num.toFixed(2);
+};
+
+onMounted(fetchEstadoCaja);
+</script>
+
+<style scoped>
+.transparent-list {
+  background-color: transparent !important;
+}
+.transparent-list .v-list-item {
+  min-height: 28px;
+}
+</style>

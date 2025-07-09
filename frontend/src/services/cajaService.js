@@ -1,4 +1,4 @@
-import apiClient from './apiClient'; // Asegúrate que la ruta a tu cliente de axios es correcta
+import apiClient from './api'; // Asegúrate que la ruta a tu cliente de axios es correcta
 
 const cajaService = {
   /**
@@ -11,8 +11,8 @@ const cajaService = {
   /**
    * Envía una solicitud para abrir la caja con un monto inicial.
    */
-  abrirCaja(montoApertura) {
-    return apiClient.post('/caja/abrir', { monto_apertura_usd: montoApertura });
+  abrirCaja(datosApertura) {
+    return apiClient.post('/caja/abrir', datosApertura);
   },
 
   /**

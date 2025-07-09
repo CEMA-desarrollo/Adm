@@ -9,7 +9,7 @@ const verifyToken = (req, res, next) => {
 };
 
 const isAdmin = (req, res, next) => {
-  if (req.user && req.user.rol === 'admin') {
+  if (req.user && req.user.rol.toLowerCase() === 'administrador') {
     return next();
   }
   return res.status(403).json({ message: 'Acceso denegado. Se requiere rol de administrador.' });
