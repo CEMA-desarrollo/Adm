@@ -236,12 +236,21 @@ const serviciosFiltrados = computed(() => {
 async function loadInitialData() {
   loading.value = true;
   try {
-    const [tratamientosData, pacientesData, proveedoresData, serviciosData] = await Promise.all([
+    // Renombramos la variable para mayor claridad, ya que la API devuelve un objeto paginado.
+    const [tratamientosResponse, pacientesData, proveedoresData, serviciosData] = await Promise.all([
       tratamientoService.getAll(),
       pacienteService.getAll(),
       proveedorService.getAll(true), // Solo proveedores activos
       servicioService.getAll(true)  // Solo servicios activos
     ]);
+
+    // El error ocurre porque la API de tratamientos devuelve un objeto { tratamientos: [...], total: ... }
+    // y el código intentaba hacer .map() sobre el objeto completo en lugar del array interno.
+    // La solución es acceder a la propiedad 'tratamientos' de la respuesta.
+    const tratamientosData = tratamientosResponse.tratamientos;
+    if (!Array.isArray(tratamientosData)) {
+      throw new TypeError("La respuesta de la API de tratamientos no contiene un array válido.");
+    }
 
     // Enriquecemos los datos de tratamientos en el frontend.
     // Esto nos protege si la API no devuelve los nombres y asegura que la tabla siempre se vea bien.
