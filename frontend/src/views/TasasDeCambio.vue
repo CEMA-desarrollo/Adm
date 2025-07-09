@@ -20,17 +20,19 @@
                 type="date"
                 label="Fecha"
                 variant="outlined"
-                readonly
               ></v-text-field>
               <v-text-field
                 v-model="nuevaTasa.tasa_bs_por_usd"
                 label="Tasa (Bs. por USD)"
                 type="number"
-                step="0.01"
+                step="0.0001"
                 prefix="Bs."
                 variant="outlined"
                 class="mt-4"
-                :rules="[v => !!v || 'La tasa es requerida']"
+                :rules="[
+                  v => !!v || 'La tasa es requerida',
+                  v => (v && parseFloat(v) > 0) || 'La tasa debe ser un número positivo'
+                ]"
               ></v-text-field>
               <v-btn type="submit" color="primary" block class="mt-4" :loading="guardando">
                 Guardar Tasa
@@ -59,7 +61,7 @@
               {{ new Date(value).toLocaleDateString('es-VE', { timeZone: 'UTC' }) }}
             </template>
             <template v-slot:item.tasa_bs_por_usd="{ value }">
-              Bs. {{ parseFloat(value).toFixed(2) }}
+              Bs. {{ parseFloat(value).toFixed(4) }}
             </template>
           </v-data-table>
         </v-card>
