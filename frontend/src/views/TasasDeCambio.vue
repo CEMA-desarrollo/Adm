@@ -92,7 +92,14 @@ async function cargarHistorial() {
   try {
     // NOTA: Necesitarás crear este endpoint en tu backend.
     const response = await axios.get('/api/tasas-cambio');
-    historialTasas.value = response.data;
+    if (Array.isArray(response.data)) {
+      historialTasas.value = response.data;
+    } else {
+      // This handles cases where the API might not return an array, or returns the index.html fallback.
+      console.error("API response for exchange rates is not an array:", response.data);
+      showSnackbar('Respuesta inesperada del servidor al cargar historial.', 'error');
+      historialTasas.value = []; // Ensure it's an array to prevent data-table errors
+    }
   } catch (error) {
     console.error("Error al cargar el historial de tasas:", error);
     showSnackbar('No se pudo cargar el historial.', 'error');
